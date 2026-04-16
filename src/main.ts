@@ -18,12 +18,15 @@ import { initControls } from './controls';
 // Get the canvas element
 const canvas = document.getElementById('ar-canvas') as HTMLCanvasElement;
 
-// Create Three.js renderer
+// Create Three.js renderer with proper AR settings
 const renderer = new THREE.WebGLRenderer({ 
   canvas,
-  alpha: true, // Transparent background (see real world)
-  antialias: true 
+  alpha: false, // Set to false - camera background will show
+  antialias: true,
+  preserveDrawingBuffer: true
 });
+
+// Set size to full viewport
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -37,18 +40,22 @@ const scene = new THREE.Scene();
 // Create ZapWorks camera (uses phone camera)
 const camera = new ZapparThree.Camera();
 
+// Set scene background to camera texture (shows real world)
+scene.background = camera.backgroundTexture;
+
 // Request camera permissions and start
 ZapparThree.permissionRequestUI().then(() => {
   camera.start();
+  console.log('📹 Camera started - you should see the real world now');
 });
 
 // ============================================================================
 // IMAGE TRACKING SETUP
 // ============================================================================
 
-// Create image tracker
+// Create image tracker - NOW USING CAR PHOTO!
 const imageTracker = new ZapparThree.ImageTrackerLoader().load(
-  '/assets/targets/tracking-card.zpt' // We'll generate this next
+  '/assets/targets/car-tracking.zpt' // Your APG Garage car photo
 );
 
 // Create anchor for tracked image (everything attaches to this)

@@ -11,8 +11,9 @@ import * as THREE from 'three';
 // MAZE CONFIGURATION
 // ============================================================================
 
-// Cell size in meters (10cm per cell)
-const CELL_SIZE = 0.1;
+// Cell size in meters - scaled for business card tracking (8-10cm wide)
+// Each cell is now 1.5cm instead of 10cm (6x smaller for business card)
+const CELL_SIZE = 0.015;
 
 // Maze layout: 1 = wall, 0 = path, 2 = exit
 // This is a simple maze design - you can modify this!
