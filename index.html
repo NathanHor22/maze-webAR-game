@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AR Maze Game</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <!-- AR Canvas (ZapWorks renders here) -->
+  <canvas id="ar-canvas"></canvas>
+
+  <!-- Game UI Overlay -->
+  <div id="game-ui">
+    <!-- Tracking Status -->
+    <div id="tracking-status" class="status-badge">
+      <span id="status-text">Point camera at tracking card</span>
+    </div>
+
+    <!-- Game Stats -->
+    <div class="stats-panel">
+      <div class="stat-item">
+        <div class="stat-label">Moves</div>
+        <div id="move-counter" class="stat-value">0</div>
+      </div>
+    </div>
+
+    <!-- Directional Controls (Screen-Anchored) -->
+    <div class="controls-container">
+      <!-- Up button -->
+      <button id="btn-up" class="control-btn">
+        <span>▲</span>
+      </button>
+      
+      <!-- Left/Down/Right row -->
+      <div class="horizontal-controls">
+        <button id="btn-left" class="control-btn">
+          <span>◀</span>
+        </button>
+        
+        <button id="btn-down" class="control-btn">
+          <span>▼</span>
+        </button>
+        
+        <button id="btn-right" class="control-btn">
+          <span>▶</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Win Message (Hidden by default) -->
+    <div id="win-message" class="win-overlay" style="display: none;">
+      <div class="win-content">
+        <h1>🎉 You Win!</h1>
+        <p>Maze completed in <span id="final-moves">0</span> moves</p>
+        <button id="restart-btn" class="restart-button">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load the game -->
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
