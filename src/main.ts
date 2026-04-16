@@ -30,6 +30,9 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+// CRITICAL: Tell ZapWorks which WebGL context to use (required for camera feed)
+ZapparThree.glContextSet(renderer.getContext());
+
 // Create Three.js scene
 const scene = new THREE.Scene();
 
