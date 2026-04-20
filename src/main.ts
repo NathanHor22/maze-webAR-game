@@ -30,13 +30,13 @@ imageTracker.onVisible.bind(() => { scanPrompt.style.display = 'none'; });
 imageTracker.onNotVisible.bind(() => { scanPrompt.style.display = 'flex'; });
 
 // ── Game Board — landscape to match Synapze business card (85mm x 55mm) ──────
-const CARD_W = 1.0;
-const CARD_H = 0.65;
+const CARD_W = 3.0;
+const CARD_H = 1.95;
 
 // No board mesh — game floats transparently over the real card
 
 // ── Player ────────────────────────────────────────────────────────────────────
-const PLAYER_R = 0.11;
+const PLAYER_R = 0.33;
 const playerMesh = new THREE.Mesh(
   new THREE.SphereGeometry(PLAYER_R, 20, 20),
   new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0x991111 })
@@ -48,7 +48,7 @@ let playerX = 0;
 let playerY = 0;
 
 // ── Coins ─────────────────────────────────────────────────────────────────────
-const COIN_R = 0.08;
+const COIN_R = 0.24;
 const COIN_COUNT = 8;
 const COLLECT_DIST = PLAYER_R + COIN_R;
 const FLEE_TRIGGER = 4; // coins remaining when fleeing starts
@@ -67,8 +67,8 @@ const FLEE_ACCEL = 0.0025;
 const FLEE_MAX_SPEED = 0.022;
 
 function spawnCoins() {
-  const marginX = CARD_W / 2 - 0.14;
-  const marginY = CARD_H / 2 - 0.14;
+  const marginX = CARD_W / 2 - 0.42;
+  const marginY = CARD_H / 2 - 0.42;
   for (let i = 0; i < COIN_COUNT; i++) {
     const mesh = new THREE.Mesh(
       new THREE.SphereGeometry(COIN_R, 14, 14),
@@ -210,7 +210,7 @@ document.getElementById('btn-play-again-win')!.addEventListener('click', restart
 document.getElementById('btn-play-again-lose')!.addEventListener('click', restartGame);
 
 // ── Movement ──────────────────────────────────────────────────────────────────
-const STEP = 0.014;
+const STEP = 0.042;
 let moveInterval: ReturnType<typeof setInterval> | null = null;
 
 let timerStarted = false;
