@@ -154,7 +154,7 @@ body {
 /* Directional Controls - SCREEN ANCHORED */
 .controls-container {
   position: fixed;
-  bottom: calc(env(safe-area-inset-bottom, 20px) + 30px);
+  bottom: calc(env(safe-area-inset-bottom, 20px) + 80px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
