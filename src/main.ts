@@ -20,7 +20,8 @@ sun.position.set(1, 3, 2);
 scene.add(ambient, sun);
 
 // ── Image Tracker ─────────────────────────────────────────────────────────────
-const imageTracker = new ZapparThree.ImageTrackerLoader().load('/assets/targets/car-tracking.zpt');
+const imageTracker = new ZapparThree.ImageTrackerLoader().load('/assets/targets/synapze-card.zpt');
+
 const trackerGroup = new ZapparThree.ImageAnchorGroup(camera, imageTracker);
 scene.add(trackerGroup);
 
@@ -28,13 +29,11 @@ const scanPrompt = document.getElementById('scan-prompt') as HTMLElement;
 imageTracker.onVisible.bind(() => { scanPrompt.style.display = 'none'; });
 imageTracker.onNotVisible.bind(() => { scanPrompt.style.display = 'flex'; });
 
-// ── Game Board — portrait, ~35% bigger than before ───────────────────────────
-const CARD_W = 1.62;
-const CARD_H = 2.43;
+// ── Game Board — landscape to match Synapze business card (85mm x 55mm) ──────
+const CARD_W = 1.0;
+const CARD_H = 0.65;
 
-const boardGeo = new THREE.PlaneGeometry(CARD_W, CARD_H);
-const boardMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
-trackerGroup.add(new THREE.Mesh(boardGeo, boardMat));
+// No board mesh — game floats transparently over the real card
 
 // ── Player ────────────────────────────────────────────────────────────────────
 const PLAYER_R = 0.11;

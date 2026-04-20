@@ -5,7 +5,8 @@
       "Bash(timeout 8 npm run dev)",
       "WebFetch(domain:docs.zap.works)",
       "WebSearch",
-      "Bash(vercel --version)"
+      "Bash(vercel --version)",
+      "Bash(zapworks train *)"
     ]
   }
 }
