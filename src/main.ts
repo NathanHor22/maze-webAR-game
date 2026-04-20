@@ -37,8 +37,24 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Nav button listeners (wired up, ready for game logic)
-document.getElementById('btn-up')?.addEventListener('click', () => console.log('up'));
-document.getElementById('btn-down')?.addEventListener('click', () => console.log('down'));
-document.getElementById('btn-left')?.addEventListener('click', () => console.log('left'));
-document.getElementById('btn-right')?.addEventListener('click', () => console.log('right'));
+// Player movement
+const player = document.getElementById('player') as HTMLElement;
+const step = 30;
+let px = window.innerWidth / 2;
+let py = window.innerHeight / 2;
+
+function movePlayer(dx: number, dy: number) {
+  px = Math.max(25, Math.min(window.innerWidth - 25, px + dx));
+  py = Math.max(25, Math.min(window.innerHeight - 25, py + dy));
+  player.style.left = px + 'px';
+  player.style.top = py + 'px';
+}
+
+// Set initial position
+player.style.left = px + 'px';
+player.style.top = py + 'px';
+
+document.getElementById('btn-up')?.addEventListener('click', () => movePlayer(0, -step));
+document.getElementById('btn-down')?.addEventListener('click', () => movePlayer(0, step));
+document.getElementById('btn-left')?.addEventListener('click', () => movePlayer(-step, 0));
+document.getElementById('btn-right')?.addEventListener('click', () => movePlayer(step, 0));
