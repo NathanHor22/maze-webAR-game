@@ -12,7 +12,13 @@
     "type": "git",
     "url": "git+https://github.com/NathanHor22/maze-webAR-game.git"
   },
-  "keywords": ["webAR", "zapworks", "three.js", "maze", "game"],
+  "keywords": [
+    "webAR",
+    "zapworks",
+    "three.js",
+    "maze",
+    "game"
+  ],
   "author": "Nathan Hor",
   "license": "MIT",
   "bugs": {
@@ -26,6 +32,7 @@
   },
   "devDependencies": {
     "@types/three": "^0.183.1",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vite-plugin-mkcert": "^2.0.0"
   }
 }

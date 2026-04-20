@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(timeout 8 npm run dev)",
+      "WebFetch(domain:docs.zap.works)",
+      "WebSearch",
+      "Bash(vercel --version)"
     ]
   }
 }
