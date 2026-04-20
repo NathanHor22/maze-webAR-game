@@ -36,7 +36,7 @@ const CARD_H = 1.95;
 // No board mesh — game floats transparently over the real card
 
 // ── Player ────────────────────────────────────────────────────────────────────
-const PLAYER_R = 0.33;
+const PLAYER_R = 0.20;
 const playerMesh = new THREE.Mesh(
   new THREE.SphereGeometry(PLAYER_R, 20, 20),
   new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0x991111 })
@@ -48,7 +48,7 @@ let playerX = 0;
 let playerY = 0;
 
 // ── Coins ─────────────────────────────────────────────────────────────────────
-const COIN_R = 0.24;
+const COIN_R = 0.14;
 const COIN_COUNT = 8;
 const COLLECT_DIST = PLAYER_R + COIN_R;
 const FLEE_TRIGGER = 4; // coins remaining when fleeing starts
@@ -62,9 +62,9 @@ const coins: Coin[] = [];
 // Fleeing state
 let coinsMoving = false;
 let coinMoveStartTime = 0;
-const FLEE_BASE_SPEED = 0.003;
-const FLEE_ACCEL = 0.0025;
-const FLEE_MAX_SPEED = 0.022;
+const FLEE_BASE_SPEED = 0.007;
+const FLEE_ACCEL = 0.004;
+const FLEE_MAX_SPEED = 0.04;
 
 function spawnCoins() {
   const marginX = CARD_W / 2 - 0.42;
