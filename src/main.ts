@@ -25,8 +25,14 @@ const trackerGroup = new ZapparThree.ImageAnchorGroup(camera, imageTracker);
 scene.add(trackerGroup);
 
 const scanPrompt = document.getElementById('scan-prompt') as HTMLElement;
-imageTracker.onVisible.bind(() => { scanPrompt.classList.add('hidden'); });
-imageTracker.onNotVisible.bind(() => { scanPrompt.classList.remove('hidden'); });
+imageTracker.onVisible.bind(() => {
+  scanPrompt.classList.add('hidden');
+  trackerGroup.visible = true;
+});
+imageTracker.onNotVisible.bind(() => {
+  scanPrompt.classList.remove('hidden');
+  trackerGroup.visible = false;
+});
 
 // ── Game board dimensions ─────────────────────────────────────────────────────
 const CARD_W = 3.0;
