@@ -39,22 +39,41 @@ window.addEventListener('resize', () => {
 
 // Player movement
 const player = document.getElementById('player') as HTMLElement;
-const step = 30;
+const STEP = 8;
+const INTERVAL_MS = 16; // ~60fps
 let px = window.innerWidth / 2;
 let py = window.innerHeight / 2;
+let moveInterval: ReturnType<typeof setInterval> | null = null;
 
-function movePlayer(dx: number, dy: number) {
-  px = Math.max(25, Math.min(window.innerWidth - 25, px + dx));
-  py = Math.max(25, Math.min(window.innerHeight - 25, py + dy));
-  player.style.left = px + 'px';
-  player.style.top = py + 'px';
-}
-
-// Set initial position
 player.style.left = px + 'px';
 player.style.top = py + 'px';
 
-document.getElementById('btn-up')?.addEventListener('click', () => movePlayer(0, -step));
-document.getElementById('btn-down')?.addEventListener('click', () => movePlayer(0, step));
-document.getElementById('btn-left')?.addEventListener('click', () => movePlayer(-step, 0));
-document.getElementById('btn-right')?.addEventListener('click', () => movePlayer(step, 0));
+function startMoving(dx: number, dy: number) {
+  stopMoving();
+  moveInterval = setInterval(() => {
+    px = Math.max(25, Math.min(window.innerWidth - 25, px + dx));
+    py = Math.max(25, Math.min(window.innerHeight - 25, py + dy));
+    player.style.left = px + 'px';
+    player.style.top = py + 'px';
+  }, INTERVAL_MS);
+}
+
+function stopMoving() {
+  if (moveInterval !== null) {
+    clearInterval(moveInterval);
+    moveInterval = null;
+  }
+}
+
+function bindButton(id: string, dx: number, dy: number) {
+  const btn = document.getElementById(id)!;
+  btn.addEventListener('pointerdown', () => startMoving(dx, dy));
+  btn.addEventListener('pointerup', stopMoving);
+  btn.addEventListener('pointercancel', stopMoving);
+  btn.addEventListener('pointerleave', stopMoving);
+}
+
+bindButton('btn-up',    0, -STEP);
+bindButton('btn-down',  0,  STEP);
+bindButton('btn-left', -STEP, 0);
+bindButton('btn-right', STEP, 0);
