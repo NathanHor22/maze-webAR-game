@@ -9,12 +9,20 @@
 <body>
   <canvas id="ar-canvas"></canvas>
 
+  <!-- Shown when image is not in view -->
+  <div id="scan-prompt">
+    <div class="scan-box">
+      <div class="scan-icon">📷</div>
+      <p>Point camera at the car card to start</p>
+    </div>
+  </div>
+
+  <!-- Score -->
   <div id="score-display">
     <span>Score: </span><span id="score-counter">0</span>
   </div>
 
-  <div id="player"></div>
-
+  <!-- Nav buttons -->
   <div class="controls-container">
     <button id="btn-up" class="control-btn"><span>▲</span></button>
     <div class="horizontal-controls">

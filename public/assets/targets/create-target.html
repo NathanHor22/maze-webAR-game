@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Tracking Target Generator</title>
+</head>
+<body>
+  <canvas id="canvas" width="1024" height="1024"></canvas>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // White background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, 1024, 1024);
+    
+    // Black border
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, 1024, 50);
+    ctx.fillRect(0, 974, 1024, 50);
+    ctx.fillRect(0, 0, 50, 1024);
+    ctx.fillRect(974, 0, 50, 1024);
+    
+    // Create unique pattern (QR-code like)
+    ctx.fillStyle = '#000000';
+    const cellSize = 64;
+    const pattern = [
+      [1,0,1,0,1,0,1,0,1,0,1,0],
+      [0,1,1,0,0,1,1,0,0,1,1,0],
+      [1,1,0,0,1,1,0,0,1,1,0,0],
+      [0,0,1,1,0,0,1,1,0,0,1,1],
+      [1,0,0,1,1,0,0,1,1,0,0,1],
+      [0,1,1,1,0,1,1,1,0,1,1,1],
+      [1,1,1,0,1,1,1,0,1,1,1,0],
+      [0,0,0,1,0,0,0,1,0,0,0,1],
+      [1,0,1,1,1,0,1,1,1,0,1,1],
+      [0,1,0,0,0,1,0,0,0,1,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1],
+      [0,0,0,0,0,0,0,0,0,0,0,0]
+    ];
+    
+    for (let y = 0; y < pattern.length; y++) {
+      for (let x = 0; x < pattern[y].length; x++) {
+        if (pattern[y][x] === 1) {
+          ctx.fillRect(
+            100 + x * cellSize,
+            100 + y * cellSize,
+            cellSize,
+            cellSize
+          );
+        }
+      }
+    }
+    
+    // Add corner markers (for better tracking)
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(100, 100, 128, 128);
+    ctx.fillRect(796, 100, 128, 128);
+    ctx.fillRect(100, 796, 128, 128);
+    
+    // Save as PNG
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tracking-target.png';
+      a.click();
+    });
+  </script>
+</body>
+</html>
