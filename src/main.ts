@@ -32,8 +32,8 @@ imageTracker.onVisible.bind(() => { scanPrompt.style.display = 'none'; });
 imageTracker.onNotVisible.bind(() => { scanPrompt.style.display = 'flex'; });
 
 // ── Game Board (sized to a business card: 85mm x 55mm → 0.85 x 0.55 units) ──
-const CARD_W = 0.85;
-const CARD_H = 0.55;
+const CARD_W = 1.275;
+const CARD_H = 0.825;
 
 // Board faces the camera (default PlaneGeometry is in XY plane, facing +Z)
 // No rotation needed — this makes it parallel to the card face
@@ -42,11 +42,6 @@ const boardMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, transparent: 
 const board = new THREE.Mesh(boardGeo, boardMat);
 trackerGroup.add(board);
 
-const edgesGeo = new THREE.EdgesGeometry(boardGeo);
-const edgesMat = new THREE.LineBasicMaterial({ color: 0x4ECDC4 });
-const edges = new THREE.LineSegments(edgesGeo, edgesMat);
-edges.position.z = 0.001;
-trackerGroup.add(edges);
 
 // ── Player (red sphere) ───────────────────────────────────────────────────────
 const PLAYER_R = 0.04;
