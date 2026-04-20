@@ -28,17 +28,16 @@ const scanPrompt = document.getElementById('scan-prompt') as HTMLElement;
 imageTracker.onVisible.bind(() => { scanPrompt.style.display = 'none'; });
 imageTracker.onNotVisible.bind(() => { scanPrompt.style.display = 'flex'; });
 
-// ── Game Board — portrait orientation (taller than wide) ──────────────────────
-const CARD_W = 1.2;
-const CARD_H = 1.8;
+// ── Game Board — portrait, ~35% bigger than before ───────────────────────────
+const CARD_W = 1.62;
+const CARD_H = 2.43;
 
 const boardGeo = new THREE.PlaneGeometry(CARD_W, CARD_H);
 const boardMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
-const board = new THREE.Mesh(boardGeo, boardMat);
-trackerGroup.add(board);
+trackerGroup.add(new THREE.Mesh(boardGeo, boardMat));
 
 // ── Player ────────────────────────────────────────────────────────────────────
-const PLAYER_R = 0.08;
+const PLAYER_R = 0.11;
 const playerMesh = new THREE.Mesh(
   new THREE.SphereGeometry(PLAYER_R, 20, 20),
   new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0x991111 })
@@ -50,18 +49,27 @@ let playerX = 0;
 let playerY = 0;
 
 // ── Coins ─────────────────────────────────────────────────────────────────────
-const COIN_R = 0.06;
+const COIN_R = 0.08;
 const COIN_COUNT = 8;
 const COLLECT_DIST = PLAYER_R + COIN_R;
+const FLEE_TRIGGER = 4; // coins remaining when fleeing starts
+
 let score = 0;
 const scoreEl = document.getElementById('score-counter') as HTMLElement;
 
 type Coin = { mesh: THREE.Mesh; x: number; y: number; collected: boolean };
 const coins: Coin[] = [];
 
+// Fleeing state
+let coinsMoving = false;
+let coinMoveStartTime = 0;
+const FLEE_BASE_SPEED = 0.003;
+const FLEE_ACCEL = 0.0025; // units/sec added per second
+const FLEE_MAX_SPEED = 0.022;
+
 function spawnCoins() {
-  const marginX = CARD_W / 2 - 0.12;
-  const marginY = CARD_H / 2 - 0.12;
+  const marginX = CARD_W / 2 - 0.14;
+  const marginY = CARD_H / 2 - 0.14;
   for (let i = 0; i < COIN_COUNT; i++) {
     const mesh = new THREE.Mesh(
       new THREE.SphereGeometry(COIN_R, 14, 14),
@@ -77,6 +85,28 @@ function spawnCoins() {
 
 spawnCoins();
 
+function updateMovingCoins() {
+  if (!coinsMoving || gameOver) return;
+
+  const elapsed = (Date.now() - coinMoveStartTime) / 1000;
+  const speed = Math.min(FLEE_BASE_SPEED + elapsed * FLEE_ACCEL, FLEE_MAX_SPEED);
+
+  for (const coin of coins) {
+    if (coin.collected) continue;
+    const dx = coin.x - playerX;
+    const dy = coin.y - playerY;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 0.001) continue;
+
+    // Move directly away from player
+    const nx = dx / dist;
+    const ny = dy / dist;
+    coin.x = Math.max(-(CARD_W / 2 - COIN_R), Math.min(CARD_W / 2 - COIN_R, coin.x + nx * speed));
+    coin.y = Math.max(-(CARD_H / 2 - COIN_R), Math.min(CARD_H / 2 - COIN_R, coin.y + ny * speed));
+    coin.mesh.position.set(coin.x, coin.y, COIN_R);
+  }
+}
+
 function checkCollisions() {
   for (const coin of coins) {
     if (coin.collected) continue;
@@ -85,7 +115,15 @@ function checkCollisions() {
       trackerGroup.remove(coin.mesh);
       score++;
       scoreEl.textContent = String(score);
-      if (score === COIN_COUNT) triggerWin();
+
+      const remaining = COIN_COUNT - score;
+      if (remaining === 0) { triggerWin(); return; }
+
+      // Start fleeing when 4 coins remain
+      if (remaining <= FLEE_TRIGGER && !coinsMoving) {
+        coinsMoving = true;
+        coinMoveStartTime = Date.now();
+      }
     }
   }
 }
@@ -132,7 +170,6 @@ function triggerLose() {
 }
 
 function restartGame() {
-  // Remove leftover coins from scene
   coins.forEach(c => { if (!c.collected) trackerGroup.remove(c.mesh); });
   coins.length = 0;
   score = 0;
@@ -140,9 +177,9 @@ function restartGame() {
   timeLeft = TIMER_SECONDS;
   timerEl.style.color = '#4ECDC4';
   timerEl.textContent = String(timeLeft);
-  playerX = 0;
-  playerY = 0;
+  playerX = 0; playerY = 0;
   playerMesh.position.set(0, 0, PLAYER_R);
+  coinsMoving = false;
   gameOver = false;
   winScreen.style.display  = 'none';
   loseScreen.style.display = 'none';
@@ -154,7 +191,7 @@ document.getElementById('btn-play-again-win')!.addEventListener('click', restart
 document.getElementById('btn-play-again-lose')!.addEventListener('click', restartGame);
 
 // ── Movement ──────────────────────────────────────────────────────────────────
-const STEP = 0.012;
+const STEP = 0.014;
 let moveInterval: ReturnType<typeof setInterval> | null = null;
 
 function startMoving(dx: number, dy: number) {
@@ -193,6 +230,7 @@ ZapparThree.permissionRequestUI().then(granted => {
 
 function animate() {
   requestAnimationFrame(animate);
+  updateMovingCoins();
   camera.updateFrame(renderer);
   renderer.render(scene, camera);
 }
