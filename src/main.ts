@@ -25,8 +25,8 @@ const trackerGroup = new ZapparThree.ImageAnchorGroup(camera, imageTracker);
 scene.add(trackerGroup);
 
 const scanPrompt = document.getElementById('scan-prompt') as HTMLElement;
-imageTracker.onVisible.bind(() => { scanPrompt.style.display = 'none'; });
-imageTracker.onNotVisible.bind(() => { scanPrompt.style.display = 'flex'; });
+imageTracker.onVisible.bind(() => { scanPrompt.classList.add('hidden'); });
+imageTracker.onNotVisible.bind(() => { scanPrompt.classList.remove('hidden'); });
 
 // ── Game board dimensions ─────────────────────────────────────────────────────
 const CARD_W = 3.0;
@@ -70,8 +70,8 @@ let coinMoveStartTime = 0;
 let lastFourStartTime = 0;
 
 function spawnCoins() {
-  const marginX = CARD_W / 2 - 0.42;
-  const marginY = CARD_H / 2 - 0.42;
+  const marginX = CARD_W / 2 - 0.22;
+  const marginY = CARD_H / 2 - 0.22;
   for (let i = 0; i < COIN_COUNT; i++) {
     const mesh = new THREE.Mesh(
       new THREE.SphereGeometry(COIN_R, 14, 14),
@@ -121,6 +121,7 @@ function updateMovingCoins() {
 
     coin.mesh.position.set(coin.x, coin.y, COIN_R);
   }
+  checkCollisions();
 }
 
 function checkCollisions() {
