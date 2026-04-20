@@ -9,7 +9,7 @@
 <body>
   <canvas id="ar-canvas"></canvas>
 
-  <!-- Shown when image is not in view -->
+  <!-- Scan prompt -->
   <div id="scan-prompt">
     <div class="scan-box">
       <div class="scan-icon">📷</div>
@@ -17,9 +17,38 @@
     </div>
   </div>
 
-  <!-- Score -->
-  <div id="score-display">
-    <span>Score: </span><span id="score-counter">0</span>
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-item">
+      <span class="hud-label">Score</span>
+      <span id="score-counter" class="hud-value gold">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Time</span>
+      <span id="timer" class="hud-value teal">15</span>
+    </div>
+  </div>
+
+  <!-- Win screen -->
+  <div id="win-screen" class="end-screen" style="display:none">
+    <div class="end-box win">
+      <div class="end-icon">🏆</div>
+      <h1>You Win!</h1>
+      <p>Amazing! You collected all the coins!</p>
+      <p class="sub">Thanks for playing!</p>
+      <button id="btn-play-again-win" class="end-btn">Play Again</button>
+    </div>
+  </div>
+
+  <!-- Lose screen -->
+  <div id="lose-screen" class="end-screen" style="display:none">
+    <div class="end-box lose">
+      <div class="end-icon">⏰</div>
+      <h1>Time's Up!</h1>
+      <p>So close! Better luck next time.</p>
+      <p class="sub">Thanks for playing!</p>
+      <button id="btn-play-again-lose" class="end-btn">Try Again</button>
+    </div>
   </div>
 
   <!-- Nav buttons -->

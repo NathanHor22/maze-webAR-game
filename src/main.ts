@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import * as ZapparThree from '@zappar/zappar-threejs';
 
-// ── Renderer ─────────────────────────────────────────────────────────────────
+// ── Renderer ──────────────────────────────────────────────────────────────────
 const canvas = document.getElementById('ar-canvas') as HTMLCanvasElement;
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: false, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -14,7 +14,6 @@ const camera = new ZapparThree.Camera();
 scene.background = camera.backgroundTexture;
 scene.add(camera);
 
-// Lighting
 const ambient = new THREE.AmbientLight(0xffffff, 0.8);
 const sun = new THREE.DirectionalLight(0xffffff, 1);
 sun.position.set(1, 3, 2);
@@ -25,39 +24,33 @@ const imageTracker = new ZapparThree.ImageTrackerLoader().load('/assets/targets/
 const trackerGroup = new ZapparThree.ImageAnchorGroup(camera, imageTracker);
 scene.add(trackerGroup);
 
-// ── Scan prompt UI ────────────────────────────────────────────────────────────
 const scanPrompt = document.getElementById('scan-prompt') as HTMLElement;
-
 imageTracker.onVisible.bind(() => { scanPrompt.style.display = 'none'; });
 imageTracker.onNotVisible.bind(() => { scanPrompt.style.display = 'flex'; });
 
-// ── Game Board (sized to a business card: 85mm x 55mm → 0.85 x 0.55 units) ──
-const CARD_W = 1.275;
-const CARD_H = 0.825;
+// ── Game Board — portrait orientation (taller than wide) ──────────────────────
+const CARD_W = 1.2;
+const CARD_H = 1.8;
 
-// Board faces the camera (default PlaneGeometry is in XY plane, facing +Z)
-// No rotation needed — this makes it parallel to the card face
 const boardGeo = new THREE.PlaneGeometry(CARD_W, CARD_H);
-const boardMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+const boardMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
 const board = new THREE.Mesh(boardGeo, boardMat);
 trackerGroup.add(board);
 
-
-// ── Player (red sphere) ───────────────────────────────────────────────────────
-const PLAYER_R = 0.04;
+// ── Player ────────────────────────────────────────────────────────────────────
+const PLAYER_R = 0.08;
 const playerMesh = new THREE.Mesh(
-  new THREE.SphereGeometry(PLAYER_R, 16, 16),
-  new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0x880000 })
+  new THREE.SphereGeometry(PLAYER_R, 20, 20),
+  new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0x991111 })
 );
-// Start at center, popped out in Z toward camera
 playerMesh.position.set(0, 0, PLAYER_R);
 trackerGroup.add(playerMesh);
 
 let playerX = 0;
 let playerY = 0;
 
-// ── Coins (yellow spheres) ────────────────────────────────────────────────────
-const COIN_R = 0.025;
+// ── Coins ─────────────────────────────────────────────────────────────────────
+const COIN_R = 0.06;
 const COIN_COUNT = 8;
 const COLLECT_DIST = PLAYER_R + COIN_R;
 let score = 0;
@@ -67,11 +60,11 @@ type Coin = { mesh: THREE.Mesh; x: number; y: number; collected: boolean };
 const coins: Coin[] = [];
 
 function spawnCoins() {
-  const marginX = CARD_W / 2 - 0.08;
-  const marginY = CARD_H / 2 - 0.06;
+  const marginX = CARD_W / 2 - 0.12;
+  const marginY = CARD_H / 2 - 0.12;
   for (let i = 0; i < COIN_COUNT; i++) {
     const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(COIN_R, 12, 12),
+      new THREE.SphereGeometry(COIN_R, 14, 14),
       new THREE.MeshStandardMaterial({ color: 0xFFD700, emissive: 0x886600 })
     );
     const x = (Math.random() * 2 - 1) * marginX;
@@ -87,21 +80,85 @@ spawnCoins();
 function checkCollisions() {
   for (const coin of coins) {
     if (coin.collected) continue;
-    const dist = Math.hypot(playerX - coin.x, playerY - coin.y);
-    if (dist < COLLECT_DIST) {
+    if (Math.hypot(playerX - coin.x, playerY - coin.y) < COLLECT_DIST) {
       coin.collected = true;
       trackerGroup.remove(coin.mesh);
       score++;
       scoreEl.textContent = String(score);
+      if (score === COIN_COUNT) triggerWin();
     }
   }
 }
 
-// ── Movement (X = left/right, Y = up/down on the vertical board) ─────────────
-const STEP = 0.008;
+// ── Timer ─────────────────────────────────────────────────────────────────────
+const TIMER_SECONDS = 15;
+let timeLeft = TIMER_SECONDS;
+let timerInterval: ReturnType<typeof setInterval> | null = null;
+const timerEl = document.getElementById('timer') as HTMLElement;
+let gameOver = false;
+
+function startTimer() {
+  timerEl.textContent = String(timeLeft);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = String(timeLeft);
+    if (timeLeft <= 5) timerEl.style.color = '#ff4444';
+    if (timeLeft <= 0) triggerLose();
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval !== null) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+// ── Win / Lose ────────────────────────────────────────────────────────────────
+const winScreen  = document.getElementById('win-screen')  as HTMLElement;
+const loseScreen = document.getElementById('lose-screen') as HTMLElement;
+
+function triggerWin() {
+  if (gameOver) return;
+  gameOver = true;
+  stopTimer();
+  stopMoving();
+  winScreen.style.display = 'flex';
+}
+
+function triggerLose() {
+  if (gameOver) return;
+  gameOver = true;
+  stopTimer();
+  stopMoving();
+  loseScreen.style.display = 'flex';
+}
+
+function restartGame() {
+  // Remove leftover coins from scene
+  coins.forEach(c => { if (!c.collected) trackerGroup.remove(c.mesh); });
+  coins.length = 0;
+  score = 0;
+  scoreEl.textContent = '0';
+  timeLeft = TIMER_SECONDS;
+  timerEl.style.color = '#4ECDC4';
+  timerEl.textContent = String(timeLeft);
+  playerX = 0;
+  playerY = 0;
+  playerMesh.position.set(0, 0, PLAYER_R);
+  gameOver = false;
+  winScreen.style.display  = 'none';
+  loseScreen.style.display = 'none';
+  spawnCoins();
+  startTimer();
+}
+
+document.getElementById('btn-play-again-win')!.addEventListener('click', restartGame);
+document.getElementById('btn-play-again-lose')!.addEventListener('click', restartGame);
+
+// ── Movement ──────────────────────────────────────────────────────────────────
+const STEP = 0.012;
 let moveInterval: ReturnType<typeof setInterval> | null = null;
 
 function startMoving(dx: number, dy: number) {
+  if (gameOver) return;
   stopMoving();
   moveInterval = setInterval(() => {
     playerX = Math.max(-(CARD_W / 2 - PLAYER_R), Math.min(CARD_W / 2 - PLAYER_R, playerX + dx));
@@ -128,9 +185,9 @@ bindButton('btn-down',  0,     -STEP);
 bindButton('btn-left', -STEP,   0);
 bindButton('btn-right', STEP,   0);
 
-// ── Camera permission & animation loop ───────────────────────────────────────
+// ── Camera & loop ─────────────────────────────────────────────────────────────
 ZapparThree.permissionRequestUI().then(granted => {
-  if (granted) camera.start();
+  if (granted) { camera.start(); startTimer(); }
   else ZapparThree.permissionDeniedUI();
 });
 
