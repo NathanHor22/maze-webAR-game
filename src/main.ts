@@ -200,6 +200,7 @@ function restartGame() {
   playerMesh.position.set(0, 0, PLAYER_R);
   coinsMoving = false;
   gameOver = false;
+  timerStarted = false;
   winScreen.style.display  = 'none';
   loseScreen.style.display = 'none';
   spawnCoins();
@@ -213,8 +214,11 @@ document.getElementById('btn-play-again-lose')!.addEventListener('click', restar
 const STEP = 0.014;
 let moveInterval: ReturnType<typeof setInterval> | null = null;
 
+let timerStarted = false;
+
 function startMoving(dx: number, dy: number) {
   if (gameOver) return;
+  if (!timerStarted) { timerStarted = true; startTimer(); }
   stopMoving();
   moveInterval = setInterval(() => {
     playerX = Math.max(-(CARD_W / 2 - PLAYER_R), Math.min(CARD_W / 2 - PLAYER_R, playerX + dx));
@@ -243,7 +247,7 @@ bindButton('btn-right', STEP,   0);
 
 // ── Camera & loop ─────────────────────────────────────────────────────────────
 ZapparThree.permissionRequestUI().then(granted => {
-  if (granted) { camera.start(); startTimer(); }
+  if (granted) camera.start();
   else ZapparThree.permissionDeniedUI();
 });
 
