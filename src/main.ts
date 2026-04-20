@@ -57,14 +57,14 @@ const FLEE_TRIGGER = 4; // coins remaining when fleeing starts
 let score = 0;
 const scoreEl = document.getElementById('score-counter') as HTMLElement;
 
-type Coin = { mesh: THREE.Mesh; x: number; y: number; collected: boolean };
+type Coin = { mesh: THREE.Mesh; x: number; y: number; vx: number; vy: number; collected: boolean };
 const coins: Coin[] = [];
 
 // Fleeing state
 let coinsMoving = false;
 let coinMoveStartTime = 0;
 const FLEE_BASE_SPEED = 0.003;
-const FLEE_ACCEL = 0.0025; // units/sec added per second
+const FLEE_ACCEL = 0.0025;
 const FLEE_MAX_SPEED = 0.022;
 
 function spawnCoins() {
@@ -79,30 +79,48 @@ function spawnCoins() {
     const y = (Math.random() * 2 - 1) * marginY;
     mesh.position.set(x, y, COIN_R);
     trackerGroup.add(mesh);
-    coins.push({ mesh, x, y, collected: false });
+    coins.push({ mesh, x, y, vx: 0, vy: 0, collected: false });
   }
 }
 
 spawnCoins();
+
+function initCoinVelocities() {
+  for (const coin of coins) {
+    if (coin.collected) continue;
+    const dx = coin.x - playerX;
+    const dy = coin.y - playerY;
+    const dist = Math.hypot(dx, dy) || 1;
+    coin.vx = (dx / dist) * FLEE_BASE_SPEED;
+    coin.vy = (dy / dist) * FLEE_BASE_SPEED;
+  }
+}
 
 function updateMovingCoins() {
   if (!coinsMoving || gameOver) return;
 
   const elapsed = (Date.now() - coinMoveStartTime) / 1000;
   const speed = Math.min(FLEE_BASE_SPEED + elapsed * FLEE_ACCEL, FLEE_MAX_SPEED);
+  const boundX = CARD_W / 2 - COIN_R;
+  const boundY = CARD_H / 2 - COIN_R;
 
   for (const coin of coins) {
     if (coin.collected) continue;
-    const dx = coin.x - playerX;
-    const dy = coin.y - playerY;
-    const dist = Math.hypot(dx, dy);
-    if (dist < 0.001) continue;
 
-    // Move directly away from player
-    const nx = dx / dist;
-    const ny = dy / dist;
-    coin.x = Math.max(-(CARD_W / 2 - COIN_R), Math.min(CARD_W / 2 - COIN_R, coin.x + nx * speed));
-    coin.y = Math.max(-(CARD_H / 2 - COIN_R), Math.min(CARD_H / 2 - COIN_R, coin.y + ny * speed));
+    // Scale velocity to current speed while preserving direction
+    const mag = Math.hypot(coin.vx, coin.vy) || 1;
+    coin.vx = (coin.vx / mag) * speed;
+    coin.vy = (coin.vy / mag) * speed;
+
+    coin.x += coin.vx;
+    coin.y += coin.vy;
+
+    // Bounce off walls (DVD screensaver style)
+    if (coin.x > boundX)  { coin.x = boundX;  coin.vx *= -1; }
+    if (coin.x < -boundX) { coin.x = -boundX; coin.vx *= -1; }
+    if (coin.y > boundY)  { coin.y = boundY;   coin.vy *= -1; }
+    if (coin.y < -boundY) { coin.y = -boundY;  coin.vy *= -1; }
+
     coin.mesh.position.set(coin.x, coin.y, COIN_R);
   }
 }
@@ -123,6 +141,7 @@ function checkCollisions() {
       if (remaining <= FLEE_TRIGGER && !coinsMoving) {
         coinsMoving = true;
         coinMoveStartTime = Date.now();
+        initCoinVelocities();
       }
     }
   }
