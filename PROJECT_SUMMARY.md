@@ -1,221 +1,100 @@
-# 📦 PROJECT SUMMARY
+# Project summary
 
-## What Was Built
+## Product
 
-**AR Maze Game** - A complete WebAR experience using ZapWorks Three.js SDK
+**Synapze: Mind the Gap** is a mobile image-tracked WebAR maze game. MindAR anchors a Three.js tabletop board to the supplied test image. The player controls an animated robot, gathers energy cores, avoids hazards, and unlocks the portal across three handcrafted levels.
 
-Built: April 2026  
-Developer: Nathan Hor  
-Tech Stack: ZapWorks + Three.js + TypeScript + Vite
+## Current feature set
 
----
+### AR runtime
 
-## ✅ Complete Feature List
+- MindAR image tracking with one compiled image target
+- Explicit **Start AR** gesture before camera access
+- Loading, scanning, permission-error, target-found, and target-lost UI states
+- Automatic simulation and timer pause when tracking is lost
+- Restartable camera/session adapter with target event callbacks
+- HTTPS Vite development server for mobile testing
 
-### Core AR Features
-- ✅ Image tracking on physical card (15cm × 10cm lanyard size)
-- ✅ Tracking status indicator (green when locked)
-- ✅ Smooth tracking recovery (handles occlusion)
-- ✅ Camera permission handling
+### Game
 
-### Game Mechanics
-- ✅ 5×5 maze with walls
-- ✅ Collision detection (can't walk through walls)
-- ✅ Ball character (red sphere with animations)
-- ✅ Movement system (4 directions)
-- ✅ Win condition (reach green exit)
-- ✅ Move counter
-- ✅ Win screen with restart
+- Three authored maze levels with increasing patrol and trap pressure
+- Fixed-step continuous movement with grid-wall collision
+- Energy cores, checkpoint respawns, locked portals, lives, score, timer, and stars
+- Patrol drones and timed pulse-spike traps
+- Touch D-pad, dash cooldown, keyboard movement, and sound preference
+- Win, loss, replay, next-level, and return-to-scan flows
+- Best-time storage per level in the browser
 
-### UI/UX
-- ✅ Screen-anchored controls (buttons don't move with card)
-- ✅ 4 directional buttons (▲▼◀▶)
-- ✅ Touch and mouse support
-- ✅ Mobile-first responsive design
-- ✅ Safe area insets (iPhone notch support)
-- ✅ Visual feedback on button press
+### Presentation
 
-### Code Quality
-- ✅ TypeScript for type safety
-- ✅ Modular architecture (separate files for each system)
-- ✅ Comprehensive comments
-- ✅ Clean file organization
-- ✅ .gitignore configured
-- ✅ Production build ready
+- Procedural low-poly robot, drones, walls, floor, cells, traps, checkpoint, and portal
+- Lightweight pooled particles
+- Synthesized WebAudio cues with no external audio files
+- Responsive mobile UI with safe-area handling and reduced-motion support
 
----
+## Tracking assets
 
-## 📁 File Structure
+| Asset | Purpose |
+| --- | --- |
+| `public/assets/targets/mind-the-gap-target.png` | Generated artwork to print or display during testing |
+| `public/assets/targets/mind-the-gap-target.mind` | Compiled MindAR tracking data loaded at runtime |
+| `scripts/compile-mind-target.mjs` | Rebuilds `.mind` data from the PNG |
 
-```
-maze-webAR-game/
-├── src/
-│   ├── main.ts          # 🎮 AR initialization, game loop
-│   ├── maze.ts          # 🧱 Maze generation, collision system
-│   ├── player.ts        # ⚽ Ball character, movement, animations
-│   ├── controls.ts      # 🎯 Button input handling
-│   ├── style.css        # 🎨 UI styling
-│   └── (HTML in root)
-├── assets/
-│   └── targets/
-│       ├── tracking-target.png      # 🖼️ Source image
-│       └── tracking-card.zpt        # 📍 Trained tracking file
-├── public/              # Static assets
-├── node_modules/        # Dependencies (gitignored)
-├── package.json         # NPM configuration
-├── vite.config.js       # Dev server config
-├── tsconfig.json        # TypeScript settings
-├── .gitignore          # Git exclusions
-├── README.md           # Full documentation
-├── QUICKSTART.md       # Quick start guide
-└── PROJECT_SUMMARY.md  # This file
-```
+Recompile after changing the source artwork:
 
----
-
-## 🎯 How It Works
-
-### 1. Image Tracking
-```
-Phone camera → ZapWorks detects tracking-card.zpt → Locks 3D coordinate system to card
-```
-
-### 2. Maze System
-```
-MAZE_LAYOUT array → Creates wall meshes → Positioned relative to card center
-```
-
-### 3. Player Movement
-```
-Button press → Check collision → Update grid position → Smooth lerp animation → Check win
-```
-
-### 4. Game Loop
-```
-60 FPS → Update player animation → Update camera → Render Three.js scene
-```
-
----
-
-## 🔧 Key Technologies
-
-| Technology | Purpose | Version |
-|------------|---------|---------|
-| ZapWorks Three.js SDK | Image tracking | 4.3.0 |
-| Three.js | 3D rendering | 0.183.2 |
-| Vite | Dev server & bundler | 8.0.8 |
-| TypeScript | Type-safe JavaScript | 6.0.2 |
-
----
-
-## 📊 Code Statistics
-
-- **Total Files**: 15
-- **Lines of Code**: ~2,200+
-- **Main Game Logic**: ~400 lines
-- **Comments**: Extensive (learning-focused)
-- **Dependencies**: 35 packages
-
----
-
-## 🚀 Deployment Ready
-
-### Development
 ```bash
+npm run compile:target
+```
+
+## Architecture
+
+```text
+Browser UI
+  index.html + src/style.css
+           |
+           v
+Integration layer
+  src/main.ts
+     |             |
+     v             v
+AR adapter       Game core
+  src/ar/          src/game/
+     |             |
+     +------ Three.js scene/anchor
+                  |
+             MindAR camera
+```
+
+- `src/main.ts` binds DOM controls, countdowns, result screens, sound preference, and the render loop.
+- `src/ar/MindARSession.ts` contains the MindAR-specific lifecycle boundary and exposes the scene, camera, renderer, and anchor group.
+- `src/game/SynapzeGame.ts` owns state, fixed-step updates, collision, hazards, score, and progression.
+- `src/game/levels.ts` defines and validates all three maps.
+- `src/game/models.ts`, `particles.ts`, and `audio.ts` provide the asset-free presentation.
+- `src/game/types.ts` documents the host callback and snapshot contract.
+
+The older top-level maze, player, and control modules are not part of the active runtime; the integrated experience uses `src/game/`.
+
+## Development workflow
+
+```bash
+npm install --ignore-scripts
+npm run typecheck
 npm run dev
-```
-Starts HTTPS server at localhost:5173
-
-### Production
-```bash
 npm run build
 ```
-Outputs optimized bundle to `/dist`
 
-### Hosting Options
-- ✅ Netlify (recommended)
-- ✅ Vercel
-- ✅ GitHub Pages
-- ✅ Any static host
+Use `npm run preview` to inspect a production bundle locally. The app must ultimately be hosted in a trusted HTTPS context for camera access.
 
----
+## Technology
 
-## 🎓 Learning Outcomes
+| Technology | Role |
+| --- | --- |
+| MindAR | Browser image tracking |
+| Three.js | Rendering and procedural models |
+| TypeScript | Strict application and game types |
+| Vite | HTTPS development server and production bundling |
+| WebAudio | Runtime-generated sound cues |
 
-Building this project teaches:
+## Current limitation
 
-### AR/XR Concepts
-- Image tracking fundamentals
-- AR coordinate systems
-- Tracking stability techniques
-- Mobile AR UX patterns
-
-### Three.js
-- Scene setup
-- Mesh creation
-- Materials & lighting
-- Animation loops
-- Camera systems
-
-### Game Development
-- Collision detection
-- Grid-based movement
-- State management
-- Win conditions
-- UI/game separation
-
-### Web Development
-- TypeScript modules
-- Vite bundling
-- Mobile-first CSS
-- Touch events
-- HTTPS requirements
-
----
-
-## 🔄 Next Steps / Extensions
-
-### Easy Additions (1-2 hours)
-- [ ] Sound effects (coin collect, wall bump, win)
-- [ ] Timer (how fast can you complete?)
-- [ ] Difficulty levels (small/medium/large maze)
-- [ ] Different character skins
-- [ ] Power-ups (teleport, ghost mode)
-
-### Medium Additions (1 day)
-- [ ] Multiple maze layouts (random generation)
-- [ ] Leaderboard (Firebase integration)
-- [ ] Multiplayer (share card, race)
-- [ ] Procedural maze generation
-- [ ] Particle effects
-
-### Advanced Additions (1 week)
-- [ ] 3D character model (GLB/GLTF)
-- [ ] Enemy AI (ghosts that chase you)
-- [ ] Level progression
-- [ ] Achievements system
-- [ ] Social sharing
-
----
-
-## 📸 Screenshots
-
-(To be added after testing)
-
----
-
-## 🐛 Known Issues
-
-None currently - project is production-ready!
-
----
-
-## 📄 License
-
-MIT License - Free to use, modify, and distribute
-
----
-
-**Project Status**: ✅ COMPLETE & READY TO TEST
-
-Next action: Run `npm run dev` and test on your phone!
+Automated typechecks and builds verify code and bundling, but they cannot validate camera permission, physical-target quality, focus behavior, tracking stability, thermal load, or mobile frame rate. Real-device camera testing over HTTPS remains required before release. The included generated image is a practical test target and can be replaced with final artwork by recompiling the `.mind` file.

@@ -1,150 +1,141 @@
-# ✅ Testing Checklist
+# Test checklist
 
-Use this checklist to verify everything works before deploying.
+Record the phone model, OS, browser/version, target size, and lighting conditions for every device pass.
 
-## Pre-Flight Checks
+## Automated checks
 
-### 1. Development Server
-```bash
-cd /maze-webAR-game
-npm run dev
-```
+- [ ] Install succeeds with `npm install --ignore-scripts`
+- [ ] `npm run typecheck` passes
+- [ ] `npm run build` passes
+- [ ] `npm run compile:target` rebuilds `public/assets/targets/mind-the-gap-target.mind`
+- [ ] `npm run dev` starts the HTTPS Vite server
+- [ ] Production output is written to `dist/`
+- [ ] Browser console has no startup or render-loop errors
 
-- [ ] Server starts without errors
-- [ ] Shows `https://localhost:5173/`
-- [ ] Shows network IP address
-- [ ] No compilation errors in terminal
+## Target assets
 
-### 2. Tracking Card Preparation
-- [ ] Located file: `assets/targets/tracking-target.png`
-- [ ] Printed on A4 paper (15cm × 15cm minimum)
-- [ ] OR displayed fullscreen on laptop
-- [ ] Image is clear and high-contrast
+- [ ] `public/assets/targets/mind-the-gap-target.png` opens correctly
+- [ ] `public/assets/targets/mind-the-gap-target.mind` is present and non-empty
+- [ ] Printed target is flat, sharp, and free of glossy reflections
+- [ ] Screen-displayed target is large, bright, and unobstructed
+- [ ] Full target can remain inside the rear-camera frame at a comfortable distance
+- [ ] Recompiled `.mind` data is committed whenever the PNG changes
 
-## Desktop Browser Test
+## HTTPS and camera startup
 
-Open `https://localhost:5173` in Chrome/Safari
+- [ ] Phone opens the HTTPS network address shown by Vite
+- [ ] Development certificate is trusted by the phone
+- [ ] **Start AR** is visible before camera permission is requested
+- [ ] Tapping **Start AR** prompts for camera access
+- [ ] Allowing permission opens the camera and scanning state
+- [ ] Denying permission shows an understandable error and retry action
+- [ ] Retrying after permission is enabled starts AR successfully
+- [ ] Missing/in-use camera failures do not leave controls active
 
-- [ ] Page loads without errors
-- [ ] Can see the 4 control buttons (bottom-right)
-- [ ] Can see status badge (top center)
-- [ ] Can see move counter (below status)
-- [ ] Console shows: "🎮 AR Maze Game Initialized!"
-- [ ] Console shows: "🎮 Controls initialized"
+## Image tracking
 
-## Mobile Phone Test
+- [ ] Scanner recognizes `mind-the-gap-target.png`
+- [ ] Tabletop board appears aligned with the image plane
+- [ ] Board remains reasonably stable during slow phone movement
+- [ ] Tracking works with the target printed on matte paper
+- [ ] Tracking works when the target is displayed on a second screen
+- [ ] Brief partial occlusion is handled without resetting the level
+- [ ] Moving the target out of frame shows the target-lost state
+- [ ] Target loss pauses the game timer and hazards
+- [ ] Reacquiring the target resumes the same game state
+- [ ] Initial target loss before countdown returns cleanly to scanning
 
-### Setup
-- [ ] Phone and computer on same WiFi
-- [ ] Found computer's IP address
-- [ ] Opened `https://YOUR_IP:5173` on phone
-- [ ] Accepted security certificate warning
-- [ ] Granted camera permissions
+## Start and controls
 
-### AR Tracking
-- [ ] Camera view appears
-- [ ] Status shows "Point camera at tracking card"
-- [ ] Pointed phone at tracking card
-- [ ] Status changes to "Tracking Active" (green)
-- [ ] Can see the maze appear on the card
-- [ ] Can see the red ball character
-- [ ] Can see the green exit marker
+- [ ] First tracking lock starts the visible countdown
+- [ ] D-pad remains screen-anchored while the board tracks
+- [ ] Holding Up moves toward the top of the maze
+- [ ] Holding Down moves toward the bottom of the maze
+- [ ] Holding Left and Right moves in the expected directions
+- [ ] Diagonal multi-touch input is normalized
+- [ ] Releasing, cancelling, or leaving a D-pad button stops that direction
+- [ ] Robot cannot pass through maze walls or outside the board
+- [ ] **Dash** produces a short speed burst
+- [ ] Dash button enters cooldown and becomes available again
+- [ ] Arrow keys/WASD and Space work during desktop testing
+- [ ] Losing focus releases held movement
 
-### Game Controls
-- [ ] Buttons visible on screen
-- [ ] Buttons don't move when tilting phone (screen-anchored ✓)
-- [ ] Tapping UP button moves ball forward
-- [ ] Tapping DOWN button moves ball backward
-- [ ] Tapping LEFT button moves ball left
-- [ ] Tapping RIGHT button moves ball right
-- [ ] Move counter increases with each move
+## Game mechanics
 
-### Collision Detection
-- [ ] Ball CANNOT move through yellow walls
-- [ ] Ball CAN move through open paths
-- [ ] Ball smoothly animates between positions
-- [ ] Ball has floating idle animation when not moving
+- [ ] Robot has visible idle and walking animation
+- [ ] Energy cores animate and disappear when collected
+- [ ] HUD core count matches the level total
+- [ ] Portal stays locked until every core is collected
+- [ ] Portal changes appearance when it unlocks
+- [ ] Entering an unlocked portal wins the level
+- [ ] Patrol drones follow their corridors without crossing walls
+- [ ] Active traps damage the robot; inactive traps do not
+- [ ] Damage removes a life and respawns at start or checkpoint
+- [ ] Temporary post-hit invulnerability prevents immediate repeated damage
+- [ ] Running out of lives shows the loss result
+- [ ] Running out of time shows the loss result
+- [ ] Score and remaining time update correctly
+- [ ] Win result shows elapsed time, collected cores, and one to three stars
+- [ ] Best time is retained per level after reload when storage is available
 
-### Win Condition
-- [ ] Ball reaches green exit circle
-- [ ] Win message appears
-- [ ] Shows final move count
-- [ ] "Play Again" button appears
-- [ ] Clicking "Play Again" resets game
-- [ ] Ball returns to start position
-- [ ] Move counter resets to 0
+## Level progression
 
-## Edge Cases
+- [ ] Level 1, **Signal Garden**, is reachable from start to all cores and exit
+- [ ] Level 2, **Crossed Circuits**, loads after completing level 1
+- [ ] Level 3, **The Mind Gap**, loads after completing level 2
+- [ ] Each level uses its expected palette, core count, drones, traps, and timer
+- [ ] Replay from a win result resets the current level
+- [ ] Replay from a loss result resets lives, timer, actors, and collectibles
+- [ ] Next Level preserves intended campaign progression
+- [ ] Final-level completion does not offer a nonexistent next level
+- [ ] Return to Scan clears overlays and waits for the target again
 
-### Tracking Stability
-- [ ] Tracking maintains when moving phone slightly
-- [ ] Tracking recovers after brief occlusion (cover card with hand)
-- [ ] Maze stays aligned to card (doesn't drift)
-- [ ] Works in different lighting conditions
+## Models, effects, and audio
 
-### UI Responsiveness
-- [ ] Buttons respond immediately to touch
-- [ ] No lag between tap and movement
-- [ ] Visual feedback on button press (color change)
-- [ ] Status updates in real-time
+- [ ] Procedural robot, walls, portal, drones, traps, and cells render correctly
+- [ ] Collection, hit, unlock, and win particles appear without obvious frame drops
+- [ ] Audio begins only after a user gesture
+- [ ] Collection, checkpoint, hit, portal, win, and loss cues are audible
+- [ ] Sound toggle mutes and restores cues
+- [ ] Sound preference persists when browser storage is available
+- [ ] Muted play remains fully functional
 
-### Performance
-- [ ] Runs at 30+ FPS (smooth animation)
-- [ ] No stuttering or lag
-- [ ] Battery drain is acceptable
-- [ ] No overheating after 5 minutes
+## Responsive UI and accessibility
 
-## Browser Compatibility
+- [ ] Portrait layout leaves controls clear of the browser UI and safe areas
+- [ ] Landscape layout keeps the HUD, target prompt, and controls usable
+- [ ] Start, scan, countdown, pause, win, loss, and camera-error states do not overlap
+- [ ] Buttons have visible pressed/focus states and readable labels
+- [ ] HUD remains legible against bright and dark camera backgrounds
+- [ ] Reduced-motion preference removes nonessential UI motion without breaking feedback
+- [ ] High-contrast mode remains usable
+- [ ] Screen rotation during scanning and play does not break rendering or input
 
-Test on multiple browsers:
-- [ ] Chrome (Android) - Recommended
-- [ ] Safari (iOS) - Recommended
-- [ ] Firefox (Android)
-- [ ] Edge (Android)
+## Mobile performance
 
-## Common Issues & Fixes
+- [ ] Test on at least one current Android/Chrome device
+- [ ] Test on at least one current iPhone/Safari device
+- [ ] Gameplay remains smooth with all drones, traps, and particles visible
+- [ ] No major tracking/render hitch occurs after target reacquisition
+- [ ] Five minutes of play does not cause unacceptable heat or battery drain
+- [ ] Page reload and repeated camera retry do not leave duplicate video/canvas elements
+- [ ] Leaving the page releases camera access
 
-| Issue | Fix |
-|-------|-----|
-| Camera black screen | Reload page, re-grant permissions |
-| Tracking won't lock | Better lighting, larger print |
-| Buttons not responding | Check tracking is active (green) |
-| Game won't start | Check console for errors (F12) |
-| Certificate warning | Normal - click "Proceed anyway" |
+## Production-host check
 
-## Deployment Verification
+- [ ] `dist/` is deployed to a trusted HTTPS origin
+- [ ] Page, `.mind` data, and target preview return successfully
+- [ ] Camera permission works on the hosted origin
+- [ ] All three levels behave the same as the local build
+- [ ] No deployment URL is hard-coded into source or documentation
 
-After deploying to production:
+## Sign-off
 
-- [ ] Deployed URL loads
-- [ ] HTTPS certificate is valid (or accepted)
-- [ ] Camera permissions work
-- [ ] Tracking works same as localhost
-- [ ] All game features functional
-- [ ] Mobile performance acceptable
+Automated checks cannot validate physical camera behavior or tracking quality. Do not mark the release complete until the real-device sections above pass.
 
-## Final Sign-Off
-
-When all checks pass:
-
-```bash
-# Push to GitHub
-git push -u origin main
-
-# Deploy
-npm run build
-./deploy.sh
-```
-
-- [ ] Code pushed to GitHub
-- [ ] Live URL shared with team
-- [ ] Tracking card PDF shared
-- [ ] Demo video recorded (optional)
-
----
-
-**Tester**: _____________  
-**Date**: _____________  
-**Status**: ⬜ PASS / ⬜ FAIL  
-**Notes**: 
-
+- Tester:
+- Date:
+- Device/browser:
+- Target format and size:
+- Result: PASS / FAIL
+- Notes:

@@ -1,12 +1,14 @@
 {
   "name": "maze-webar-game",
   "version": "1.0.0",
-  "description": "WebAR maze game with image tracking - navigate a ball through a maze on a physical card",
+  "description": "MindAR and Three.js tabletop maze adventure built for mobile WebAR",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "compile:target": "node scripts/compile-mind-target.mjs"
   },
   "repository": {
     "type": "git",
@@ -14,7 +16,7 @@
   },
   "keywords": [
     "webAR",
-    "zapworks",
+    "mindar",
     "three.js",
     "maze",
     "game"
@@ -26,12 +28,13 @@
   },
   "homepage": "https://github.com/NathanHor22/maze-webAR-game#readme",
   "dependencies": {
-    "@zappar/zappar-threejs": "^4.3.0",
-    "three": "^0.183.2",
+    "mind-ar": "^1.2.5",
+    "three": "^0.160.1",
     "vite": "^8.0.8"
   },
   "devDependencies": {
-    "@types/three": "^0.183.1",
+    "@types/three": "^0.160.0",
+    "pngjs": "^7.0.0",
     "typescript": "^6.0.2",
     "vite-plugin-mkcert": "^2.0.0"
   }

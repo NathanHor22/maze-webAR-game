@@ -6,7 +6,10 @@
       "WebFetch(domain:docs.zap.works)",
       "WebSearch",
       "Bash(vercel --version)",
-      "Bash(zapworks train *)"
+      "Bash(zapworks train *)",
+      "Bash(ngrok version *)",
+      "Bash(npm run *)",
+      "Bash(zapworks upload *)"
     ]
   }
 }

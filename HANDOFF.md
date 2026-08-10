@@ -1,358 +1,96 @@
-# 🎉 PROJECT COMPLETE - HANDOFF GUIDE
+# Handoff guide
 
-**Date**: April 16, 2026  
-**Project**: AR Maze Game (WebAR)  
-**Location**: `/maze-webAR-game`  
-**Status**: ✅ READY TO TEST & DEPLOY
+## Current state
 
----
+The repository contains a complete code-level implementation of **Synapze: Mind the Gap**, a three-level MindAR and Three.js mobile WebAR game. The production bundle and strict TypeScript checks should be run before every handoff. Final acceptance still requires camera and image-tracking tests on physical mobile devices.
 
-## 📦 What You Have
+## First-run checklist
 
-A **complete, production-ready WebAR maze game** with:
-
-✅ ZapWorks image tracking  
-✅ 3D maze with collision detection  
-✅ Ball character with smooth animations  
-✅ 4-button directional controls  
-✅ Win state & restart functionality  
-✅ Mobile-optimized UI  
-✅ Full TypeScript codebase  
-✅ Git repository initialized  
-✅ Comprehensive documentation  
-
-**Total Build Time**: ~35 minutes (autonomous)  
-**Files Created**: 17  
-**Lines of Code**: 2,200+  
-
----
-
-## 🚀 IMMEDIATE NEXT STEPS (Do This Now)
-
-### Step 1: Navigate to Project
 ```bash
-cd /maze-webAR-game
-```
-
-### Step 2: Start Dev Server
-```bash
+npm install --ignore-scripts
+npm run typecheck
+npm run build
 npm run dev
 ```
 
-You should see:
-```
-VITE v8.0.8  ready in XXX ms
+The Vite development server uses HTTPS and listens on the local network. Open the network address shown in the terminal on a phone connected to the same network. Ensure the phone trusts the development certificate; otherwise its browser may refuse camera access.
 
-➜  Local:   https://localhost:5173/
-➜  Network: https://192.168.X.X:5173/
-```
+## Target files
 
-**Leave this running!**
+- Test artwork: `public/assets/targets/mind-the-gap-target.png`
+- Runtime tracking data: `public/assets/targets/mind-the-gap-target.mind`
 
-### Step 3: Print the Tracking Card
-
-**Option A - Print:**
-1. Open `/maze-webAR-game/assets/targets/tracking-target.png`
-2. Print on A4 paper (at least 15cm × 15cm)
-3. Regular paper is fine
-
-**Option B - Display on Screen:**
-1. Open `tracking-target.png` on your laptop
-2. Display fullscreen
-3. Point phone at laptop screen
-
-### Step 4: Test on Phone
-
-**Get Your Computer's IP:**
-```bash
-# Mac/Linux
-ifconfig | grep "inet " | grep -v 127.0.0.1
-
-# Windows (in Command Prompt)
-ipconfig
-```
-
-Look for something like: `192.168.1.XXX`
-
-**On Your Phone:**
-1. Open browser (Chrome or Safari)
-2. Go to: `https://YOUR_IP:5173`
-3. You'll see a security warning → **Click "Advanced" → "Proceed anyway"**
-   (This is normal - it's a self-signed HTTPS certificate)
-4. Grant camera permissions
-5. Point at tracking card
-6. Play! 🎮
-
----
-
-## 🎮 How to Play
-
-1. **Wait for green tracking status** (top of screen)
-2. **Use arrow buttons** to move:
-   - ▲ Forward
-   - ▼ Backward
-   - ◀ Left
-   - ▶ Right
-3. **Navigate to the green exit circle**
-4. **Win screen appears!**
-5. **Press "Play Again"** to restart
-
----
-
-## 🔄 Push to GitHub (When Ready)
-
-**IMPORTANT**: The project is committed locally but NOT pushed yet.
+Print the PNG on matte paper or display it on a separate screen. If the artwork changes, rebuild the tracking data:
 
 ```bash
-# Push to your GitHub repo
-git push -u origin main
+npm run compile:target
 ```
 
-This uploads:
-- ✅ All source code
-- ✅ Tracking target files
-- ✅ Documentation
-- ✅ Build configuration
+Optional custom paths are supported:
 
----
-
-## 📚 Documentation Files
-
-| File | Purpose |
-|------|---------|
-| `README.md` | Full project documentation |
-| `QUICKSTART.md` | 3-step getting started guide |
-| `PROJECT_SUMMARY.md` | Complete feature list & architecture |
-| This file | Handoff instructions |
-
----
-
-## 🛠️ Common Commands
-
-### Development
 ```bash
-npm run dev          # Start dev server
-npm run build        # Build for production
-npm run preview      # Preview production build
+npm run compile:target -- path/to/source.png path/to/output.mind
 ```
 
-### Deployment
-```bash
-./deploy.sh          # Interactive deployment helper
-```
+Keep the runtime path in `src/main.ts` aligned with the generated `.mind` file.
 
-Or manually:
-```bash
-# Netlify
-netlify deploy --prod
+## Acceptance path
 
-# Vercel
-vercel --prod
+1. Open the app on a phone over trusted HTTPS.
+2. Tap **Start AR** and grant camera permission.
+3. Scan the generated target and confirm the board is anchored to it.
+4. Wait for the countdown, then move with the touch D-pad.
+5. Confirm Dash briefly increases movement and then enters cooldown.
+6. Collect all energy cores, avoid drones and active traps, and enter the unlocked portal.
+7. Complete or inspect all three levels, including win/loss and replay controls.
+8. Move the target out of view during play and confirm the game pauses and resumes without losing progress.
+9. Test sound on/off and generated effects after a user gesture.
 
-# GitHub Pages
-git subtree push --prefix dist origin gh-pages
-```
+Desktop keyboard controls are arrow keys or WASD, with Space for Dash, but desktop input is not a replacement for phone testing.
 
----
+## Active architecture
 
-## 📁 Project Structure (Quick Reference)
+| Path | Responsibility |
+| --- | --- |
+| `src/main.ts` | Starts AR, binds UI/input, handles countdown/results, and drives rendering |
+| `src/ar/MindARSession.ts` | Owns the MindAR lifecycle, camera, renderer, scene, anchor, and target callbacks |
+| `src/game/SynapzeGame.ts` | Owns game state, simulation, collision, progression, and public controls |
+| `src/game/levels.ts` | Contains the three validated maze definitions |
+| `src/game/models.ts` | Creates procedural Three.js models |
+| `src/game/particles.ts` | Implements pooled visual bursts |
+| `src/game/audio.ts` | Synthesizes WebAudio feedback |
+| `src/game/types.ts` | Defines callbacks, events, snapshots, and options |
+| `src/style.css` | Implements the responsive mobile HUD and overlays |
+| `scripts/compile-mind-target.mjs` | Compiles PNG target artwork into `.mind` data |
 
-```
-maze-webAR-game/
-├── src/
-│   ├── main.ts          ← AR setup, game loop
-│   ├── maze.ts          ← Maze generation, collision
-│   ├── player.ts        ← Ball character logic
-│   ├── controls.ts      ← Button handlers
-│   └── style.css        ← UI styling
-├── assets/targets/
-│   ├── tracking-target.png   ← Print this!
-│   └── tracking-card.zpt     ← Trained tracking file
-├── index.html           ← Entry point
-├── package.json         ← Dependencies
-└── README.md           ← Full docs
-```
+The top-level legacy maze/player/control modules are not used by the active runtime. New gameplay work should target `src/game/`.
 
----
+## Common maintenance
 
-## 🎨 Customization Quick Tips
+### Change a level
 
-### Change Maze Layout
-Edit `src/maze.ts`:
-```typescript
-const MAZE_LAYOUT = [
-  [1, 1, 1, 1, 1],  // 1 = wall
-  [1, 0, 0, 0, 1],  // 0 = path
-  [1, 0, 1, 0, 1],
-  [1, 0, 0, 0, 2],  // 2 = exit
-  [1, 1, 1, 1, 1]
-];
-```
+Edit `src/game/levels.ts`. Maps use:
 
-### Change Colors
-Edit `src/style.css`:
-- Buttons: Search for `#4ECDC4`
-- Player: Edit `color: 0xff3333` in `player.ts`
-- Walls: Edit `color: 0xFFD700` in `maze.ts`
+- `#` wall
+- `.` floor
+- `S` player start
+- `E` exit portal
+- `C` energy core
+- `K` checkpoint
 
-### Change Difficulty
-Edit `src/maze.ts`:
-```typescript
-const CELL_SIZE = 0.1;  // Make smaller = harder
-```
+The module validates required tiles, reachability, drone corridors, and trap placement when loaded.
 
----
+### Change UI behavior
 
-## 🐛 Troubleshooting
+Edit `index.html`, `src/style.css`, and the DOM integration in `src/main.ts`. Keep gameplay decisions inside `SynapzeGame`.
 
-### "npm: command not found"
-**Fix**: Install Node.js from https://nodejs.org/
+### Replace the target artwork
 
-### "Camera not working"
-**Fix**: 
-- Use HTTPS (required for WebAR)
-- Grant camera permissions
-- Try Chrome or Safari
+Replace the PNG, run `npm run compile:target`, verify the configured `.mind` path, then retest tracking on multiple physical devices and under varied lighting.
 
-### "Tracking won't lock"
-**Fix**:
-- Ensure good lighting
-- Print card larger (20cm+)
-- Keep card flat and visible
+## Release notes
 
-### "Buttons not responding"
-**Fix**:
-- Wait for green tracking status
-- Check browser console (F12)
-- Try reloading page
-
----
-
-## 📊 Project Stats
-
-- **Development Time**: 35 minutes (autonomous build)
-- **Files**: 17 total
-- **Code**: 2,200+ lines
-- **Dependencies**: 35 packages
-- **Size**: 
-  - Source: ~50KB
-  - node_modules: ~80MB
-  - Built: ~500KB
-
----
-
-## 🎯 What's Next? (Future Enhancements)
-
-### Quick Wins (1 hour each)
-- [ ] Add sound effects
-- [ ] Timer/stopwatch
-- [ ] Multiple difficulty levels
-- [ ] Score leaderboard
-
-### Medium (1 day)
-- [ ] Random maze generation
-- [ ] Power-ups (ghost mode, teleport)
-- [ ] Multiple characters to choose from
-- [ ] Multiplayer race mode
-
-### Advanced (1 week)
-- [ ] 3D character models
-- [ ] Enemy AI
-- [ ] Level progression
-- [ ] Social sharing
-
----
-
-## 🤝 Share With Team
-
-Send to Andrew/Izham:
-
-**GitHub**: https://github.com/NathanHor22/maze-webAR-game  
-**Demo URL**: (deploy first, then share)
-
-**What to say:**
-> "Built a WebAR maze game in 35 mins using ZapWorks + Three.js. 
-> Features image tracking, collision detection, and mobile controls. 
-> Fully documented and ready to customize. Check the README!"
-
----
-
-## ✅ Success Checklist
-
-Before considering it "done":
-
-- [ ] Dev server runs (`npm run dev`)
-- [ ] Tracking card printed/displayed
-- [ ] Tested on your phone
-- [ ] Tracking locks (green status)
-- [ ] Character moves with buttons
-- [ ] Can complete the maze
-- [ ] Win screen appears
-- [ ] Pushed to GitHub
-- [ ] Deployed to live URL (optional)
-
----
-
-## 🆘 Need Help?
-
-1. **Check documentation**: README.md, QUICKSTART.md
-2. **Check browser console**: F12 → Console tab
-3. **Check git history**: `git log` to see what changed
-4. **Re-run build**: `rm -rf node_modules && npm install`
-
----
-
-## 📝 Git Commits Made
-
-```
-✅ Initial commit: AR Maze Game with ZapWorks image tracking
-✅ Add quick start guide
-✅ Add project summary documentation  
-✅ Add deployment helper script
-
-Ready to push: git push -u origin main
-```
-
----
-
-## 🎓 What You Learned
-
-By building this, you now understand:
-
-**AR/XR**:
-- Image tracking fundamentals
-- AR coordinate systems
-- Mobile AR UX patterns
-
-**Three.js**:
-- Scene setup & rendering
-- Meshes, materials, lighting
-- Animation loops
-
-**Game Dev**:
-- Grid-based movement
-- Collision detection
-- State management
-
-**Web Dev**:
-- TypeScript modules
-- Vite bundling
-- Touch events
-- Mobile-first design
-
----
-
-## 🎉 CONGRATULATIONS!
-
-You now have a **complete, working WebAR game** that:
-- ✅ Runs on any phone
-- ✅ Uses professional AR tracking
-- ✅ Has clean, documented code
-- ✅ Is ready to deploy
-- ✅ Can be customized easily
-
-**Time to test it!** Run `npm run dev` and point your phone at the card! 🚀
-
----
-
-**Questions?** Check the docs or console.log everything! 😄
+- Build output is `dist/` and can be served by an HTTPS static host.
+- No deployment URL or provider is assumed by this repository.
+- Camera permission, rear-camera selection, autofocus, target stability, mobile performance, heat, and battery behavior require device testing.
+- The robot, enemies, environment, particles, and audio are generated at runtime; there are no required GLB or audio asset files.

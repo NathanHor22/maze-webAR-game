@@ -1,78 +1,62 @@
-# 🚀 QUICK START GUIDE
+# Quick start
 
-## Run the Game (3 Steps)
+## 1. Install and verify
 
-### 1. Start Dev Server
+```bash
+npm install --ignore-scripts
+npm run typecheck
+npm run build
+```
+
+## 2. Start the HTTPS development server
+
 ```bash
 npm run dev
 ```
 
-This will start the server at `https://localhost:5173`
+Use the HTTPS network address printed by Vite. Connect the test phone to the same network and make sure its browser trusts the local certificate. Camera access will not work from an ordinary insecure network URL.
 
-### 2. Print the Tracking Card
+## 3. Open the target
 
-Open `/assets/targets/tracking-target.png` and print it:
-- **Size**: At least 15cm × 15cm (bigger is better)
-- **Paper**: Regular printer paper (matte finish preferred)
-- **Color**: Black & white is fine
+Print or display:
 
-**OR** display the image fullscreen on your laptop for quick testing.
-
-### 3. Test on Your Phone
-
-**Option A: Same WiFi Network**
-1. Find your computer's IP address:
-   - Mac: Open Terminal → `ifconfig | grep inet` → Look for 192.168.x.x
-   - Windows: Open Command Prompt → `ipconfig` → Look for IPv4 Address
-2. On your phone browser, go to: `https://YOUR_IP:5173`
-3. Accept the security warning (self-signed certificate)
-4. Grant camera permissions
-5. Point camera at tracking card
-
-**Option B: Using ngrok (If WiFi doesn't work)**
-```bash
-# Install ngrok
-npm install -g ngrok
-
-# In another terminal (keep dev server running)
-ngrok http 5173
+```text
+public/assets/targets/mind-the-gap-target.png
 ```
-Then visit the `https://` URL on your phone.
 
-## 🎮 Controls
+The app loads its matching compiled data from:
 
-- **▲** Move forward
-- **▼** Move backward  
-- **◀** Move left
-- **▶** Move right
+```text
+public/assets/targets/mind-the-gap-target.mind
+```
 
-**Goal**: Navigate the red ball to the green exit circle!
+Use matte paper or a bright second screen. Keep the artwork flat, fully visible, and free of glare.
 
-## 🐛 Troubleshooting
+If you replace the PNG, compile it again before testing:
 
-### "Camera not working"
-- Make sure you're using **HTTPS** (not HTTP)
-- Grant camera permissions when prompted
-- Try Chrome or Safari (best WebAR support)
+```bash
+npm run compile:target
+```
 
-### "Tracking won't lock"
-- Ensure good lighting (not too dark or bright)
-- Hold card flat and steady
-- Make sure the entire card is visible
-- Print larger (20cm+ works better)
+## 4. Play on a phone
 
-### "Buttons not responding"
-- Make sure the tracking is active (green status badge)
-- Try tapping the button area firmly
-- Check browser console (F12) for errors
+1. Open the app and tap **Start AR**.
+2. Grant camera permission.
+3. Aim at the test target and wait for the tracking lock and countdown.
+4. Hold the D-pad to guide the robot through the maze.
+5. Collect every energy core, avoid drones and pulse traps, then enter the unlocked portal.
+6. Tap **Dash** for a short speed boost; it has a cooldown.
+7. Use the sound button to mute or restore generated audio cues.
 
-## 📝 Next Steps
+There are three levels. Losing the target automatically pauses movement and the timer; aim back at it to resume.
 
-Want to customize the game?
+Keyboard testing is also available: arrow keys or WASD move, and Space dashes.
 
-- **Change maze layout**: Edit `src/maze.ts` → `MAZE_LAYOUT` array
-- **Adjust difficulty**: Change `CELL_SIZE` or maze size
-- **Style the UI**: Edit `src/style.css`
-- **Add features**: Add sound effects, timers, scores, etc.
+## Common problems
 
-Check the full README.md for detailed documentation!
+- **No camera:** verify HTTPS, browser permission, and that another app is not using the camera.
+- **No tracking lock:** show the whole target, improve lighting, reduce glare, and try a larger print/display.
+- **Board vanishes:** reacquire the target; this is the intended target-loss pause behavior.
+- **Desktop build succeeds but phone fails:** builds cannot exercise real camera permissions, focus, or tracking. Test on the intended mobile devices.
+
+For a production artifact, run `npm run build` and deploy `dist/` to an HTTPS static host.

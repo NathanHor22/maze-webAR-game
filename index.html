@@ -1,68 +1,278 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AR Maze Game</title>
-  <link rel="stylesheet" href="/src/style.css">
-</head>
-<body>
-  <canvas id="ar-canvas"></canvas>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#07090d" />
+    <meta
+      name="description"
+      content="Mind the Gap, a tabletop augmented-reality maze adventure by Synapze."
+    />
+    <title>Mind the Gap | Synapze AR</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body data-game-state="boot">
+    <!-- MindAR owns every video and canvas element inside this container. -->
+    <div id="ar-container" aria-label="Augmented reality camera view"></div>
 
-  <!-- Scan prompt -->
-  <div id="scan-prompt">
-    <p class="scan-hint">Point your camera at this card to play</p>
-    <img class="scan-card" src="/assets/targets/synapze-card.jpeg" alt="Synapze card" />
-  </div>
+    <main id="app-shell">
+      <button
+        id="sound-toggle"
+        class="icon-button sound-toggle"
+        type="button"
+        aria-label="Mute sound"
+        aria-pressed="false"
+      >
+        <span class="sound-icon" aria-hidden="true"><span></span></span>
+        <span class="sound-label">Sound</span>
+      </button>
 
-  <!-- HUD -->
-  <div id="hud">
-    <div class="hud-item">
-      <span class="hud-label">Collected</span>
-      <span id="score-counter" class="hud-value gold">0</span>
-    </div>
-    <div class="hud-item">
-      <span class="hud-label">Time</span>
-      <span id="timer" class="hud-value teal">15</span>
-    </div>
-  </div>
+      <!-- Initial user gesture and AR loading state. -->
+      <section id="start-screen" class="full-screen start-screen" aria-labelledby="game-title">
+        <div class="ambient-orb ambient-orb--coral" aria-hidden="true"></div>
+        <div class="ambient-orb ambient-orb--cyan" aria-hidden="true"></div>
 
-  <!-- Win screen -->
-  <div id="win-screen" class="end-screen" style="display:none">
-    <div class="end-box">
-      <h1>Great job!</h1>
-      <p>You collected all the coins.</p>
-      <button id="btn-play-again-win" class="end-btn">Play Again</button>
-      <a href="https://www.synapzemy.com/" target="_blank" rel="noopener" class="built-by">
-        <span>Built by the team at</span>
-        <img src="/assets/targets/synapze-black-logo.png" alt="Synapze" />
-      </a>
-    </div>
-  </div>
+        <div class="start-card">
+          <div class="brand-lockup">
+            <span class="brand-kicker">Synapze presents</span>
+            <div class="brand-line">
+              <span class="brand-mark" aria-hidden="true"><span></span></span>
+              <h1 id="game-title">Mind <em>the Gap</em></h1>
+            </div>
+            <p class="brand-subtitle">A tabletop AR maze adventure</p>
+          </div>
 
-  <!-- Lose screen -->
-  <div id="lose-screen" class="end-screen" style="display:none">
-    <div class="end-box">
-      <h1>Time's up!</h1>
-      <p>Better luck next time!</p>
-      <button id="btn-play-again-lose" class="end-btn">Try Again</button>
-      <a href="https://www.synapzemy.com/" target="_blank" rel="noopener" class="built-by">
-        <span>Built by the team at</span>
-        <img src="/assets/targets/synapze-black-logo.png" alt="Synapze" />
-      </a>
-    </div>
-  </div>
+          <div class="mission-brief">
+            <span class="mission-number">01</span>
+            <div>
+              <strong>Guide the runner home.</strong>
+              <p>Scan the mission card, collect every energy core, and escape before the grid collapses.</p>
+            </div>
+          </div>
 
-  <!-- Nav buttons -->
-  <div class="controls-container">
-    <button id="btn-up" class="control-btn"><span>▲</span></button>
-    <div class="horizontal-controls">
-      <button id="btn-left" class="control-btn"><span>◀</span></button>
-      <button id="btn-down" class="control-btn"><span>▼</span></button>
-      <button id="btn-right" class="control-btn"><span>▶</span></button>
-    </div>
-  </div>
+          <div id="start-status" class="system-status" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="start-status-text">Camera access is required to play</span>
+          </div>
 
-  <script type="module" src="/src/main.ts"></script>
-</body>
+          <button id="btn-start-ar" class="button button--primary start-button" type="button">
+            <span class="play-icon" aria-hidden="true"></span>
+            <span>Start AR mission</span>
+          </button>
+
+          <div id="loading-indicator" class="loading-indicator" role="status" aria-live="polite" hidden>
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <span id="loading-label">Calibrating AR systems...</span>
+          </div>
+
+          <p class="start-note">Best experienced with sound on and room to move.</p>
+        </div>
+
+        <div class="start-footer" aria-hidden="true">
+          <span>Image-tracked</span>
+          <span class="footer-divider"></span>
+          <span>Powered by MindAR + Three.js</span>
+        </div>
+      </section>
+
+      <!-- Camera permission, browser support, or startup failures. -->
+      <section
+        id="camera-error"
+        class="full-screen state-screen"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="error-title"
+        aria-describedby="error-message"
+        hidden
+      >
+        <div class="state-card state-card--error">
+          <span class="state-glyph state-glyph--error" aria-hidden="true"><span>!</span></span>
+          <span class="state-eyebrow">AR system offline</span>
+          <h2 id="error-title">We cannot reach your camera</h2>
+          <p id="error-message">
+            Allow camera access in your browser settings, then retry the mission.
+          </p>
+          <button id="btn-retry-camera" class="button button--primary" type="button">Retry camera</button>
+          <p class="support-note">Use Safari on iOS or Chrome on Android for the best experience.</p>
+        </div>
+      </section>
+
+      <!-- Visible while MindAR is looking for the image target. -->
+      <section id="scan-prompt" class="scan-overlay" aria-labelledby="scan-title" hidden>
+        <div class="scan-heading">
+          <span class="scan-kicker"><span class="status-dot" aria-hidden="true"></span> Scanner active</span>
+          <h2 id="scan-title">Find the mission card</h2>
+          <p>Fit the entire image inside the brackets and hold steady.</p>
+        </div>
+
+        <div class="scan-window" aria-hidden="true">
+          <span class="scan-corner scan-corner--tl"></span>
+          <span class="scan-corner scan-corner--tr"></span>
+          <span class="scan-corner scan-corner--bl"></span>
+          <span class="scan-corner scan-corner--br"></span>
+          <span class="scan-line"></span>
+          <span class="scan-reticle"><span></span></span>
+        </div>
+
+        <div class="target-reference">
+          <img
+            id="target-preview"
+            src="./assets/targets/mind-the-gap-target.png"
+            alt="Test tracking image for the Mind the Gap AR game"
+          />
+          <div>
+            <span>Test target</span>
+            <strong>Scan this image</strong>
+            <small id="scan-status" role="status" aria-live="polite">Waiting for target...</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Compact gameplay readout. Toggle with the hidden property. -->
+      <header id="hud" class="hud" aria-label="Mission status" hidden>
+        <div class="hud-panel hud-panel--level">
+          <span class="hud-label">Sector</span>
+          <strong id="level-counter" class="hud-value">01</strong>
+        </div>
+
+        <div class="hud-brand" aria-label="Mind the Gap">
+          <span class="brand-mark brand-mark--small" aria-hidden="true"><span></span></span>
+          <span>Mind the Gap</span>
+        </div>
+
+        <div class="hud-panel hud-panel--stats">
+          <div class="hud-stat">
+            <span class="core-icon" aria-hidden="true"></span>
+            <span class="hud-label">Cores</span>
+            <strong class="hud-value"><span id="score-counter">0</span><small>/<span id="core-total">5</span></small></strong>
+          </div>
+          <span class="hud-separator" aria-hidden="true"></span>
+          <div class="hud-stat hud-stat--timer">
+            <span class="hud-label">Time</span>
+            <strong id="timer" class="hud-value">01:30</strong>
+          </div>
+        </div>
+
+        <div id="health-status" class="health-status" aria-label="3 lives remaining">
+          <span aria-hidden="true">&#9829;</span>
+          <span aria-hidden="true">&#9829;</span>
+          <span aria-hidden="true">&#9829;</span>
+        </div>
+      </header>
+
+      <div id="countdown" class="countdown" role="status" aria-live="assertive" hidden>
+        <span id="countdown-label">Mission starts in</span>
+        <strong id="countdown-value">3</strong>
+      </div>
+
+      <section
+        id="target-lost-overlay"
+        class="target-lost"
+        role="status"
+        aria-live="assertive"
+        hidden
+      >
+        <div class="target-lost-card">
+          <span class="tracking-glyph" aria-hidden="true"><span></span></span>
+          <div>
+            <span class="state-eyebrow">Mission paused</span>
+            <h2>Target lost</h2>
+            <p>Point your camera back at the card to continue.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Touch controls are kept separate so gameplay can disable them as one unit. -->
+      <nav id="game-controls" class="game-controls" aria-label="Player controls" hidden>
+        <div class="dpad" aria-label="Movement controls">
+          <button id="btn-up" class="control-button control-button--up" type="button" aria-label="Move up">
+            <span aria-hidden="true">&#8593;</span>
+          </button>
+          <button id="btn-left" class="control-button control-button--left" type="button" aria-label="Move left">
+            <span aria-hidden="true">&#8592;</span>
+          </button>
+          <span class="dpad-center" aria-hidden="true"><span></span></span>
+          <button id="btn-right" class="control-button control-button--right" type="button" aria-label="Move right">
+            <span aria-hidden="true">&#8594;</span>
+          </button>
+          <button id="btn-down" class="control-button control-button--down" type="button" aria-label="Move down">
+            <span aria-hidden="true">&#8595;</span>
+          </button>
+        </div>
+
+        <button id="btn-dash" class="dash-button" type="button" aria-label="Dash">
+          <span class="dash-rings" aria-hidden="true"><span></span></span>
+          <strong>Dash</strong>
+          <small>Action</small>
+        </button>
+      </nav>
+
+      <!-- Mission result states. -->
+      <section
+        id="win-screen"
+        class="full-screen result-screen result-screen--win"
+        aria-labelledby="win-title"
+        hidden
+      >
+        <div class="result-card">
+          <span class="result-eyebrow">Sector clear</span>
+          <div class="result-badge result-badge--win" aria-hidden="true"><span>&#10003;</span></div>
+          <h2 id="win-title">Gap crossed.</h2>
+          <p>All energy cores secured. Your route through the maze is stable.</p>
+
+          <div id="result-stars" class="result-stars" aria-label="Three star rating">
+            <span aria-hidden="true">&#9733;</span>
+            <span aria-hidden="true">&#9733;</span>
+            <span aria-hidden="true">&#9733;</span>
+          </div>
+
+          <dl class="result-stats">
+            <div><dt>Clear time</dt><dd id="result-time">00:42</dd></div>
+            <div><dt>Cores</dt><dd id="result-cores">5 / 5</dd></div>
+            <div><dt>Sector</dt><dd id="result-level">01</dd></div>
+          </dl>
+
+          <div class="result-actions">
+            <button id="btn-next-level" class="button button--primary" type="button">Next sector</button>
+            <button id="btn-play-again-win" class="button button--ghost" type="button">Replay</button>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="lose-screen"
+        class="full-screen result-screen result-screen--lose"
+        aria-labelledby="lose-title"
+        hidden
+      >
+        <div class="result-card">
+          <span class="result-eyebrow">Grid collapsed</span>
+          <div class="result-badge result-badge--lose" aria-hidden="true"><span>!</span></div>
+          <h2 id="lose-title">Lost in the gap.</h2>
+          <p>The route destabilized, but your last checkpoint is still online.</p>
+
+          <div class="result-stars result-stars--empty" aria-label="No star rating">
+            <span aria-hidden="true">&#9734;</span>
+            <span aria-hidden="true">&#9734;</span>
+            <span aria-hidden="true">&#9734;</span>
+          </div>
+
+          <dl class="result-stats result-stats--two">
+            <div><dt>Cores found</dt><dd id="lose-result-cores">2 / 5</dd></div>
+            <div><dt>Best route</dt><dd id="best-time">00:48</dd></div>
+          </dl>
+
+          <div class="result-actions">
+            <button id="btn-play-again-lose" class="button button--primary" type="button">Retry sector</button>
+            <button id="btn-return-to-scan" class="button button--ghost" type="button">Rescan target</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
 </html>

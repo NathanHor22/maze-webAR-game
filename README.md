@@ -1,203 +1,137 @@
-# 🎮 AR Maze Game
+# Synapze: Mind the Gap
 
-A WebAR maze game using ZapWorks image tracking. Navigate a ball through a 3D maze displayed on a physical tracking card.
+Synapze is a mobile WebAR maze adventure built with MindAR, Three.js, TypeScript, and Vite. Scan the supplied image target to place a miniature game board on it, guide the robot through three levels, collect every energy core, and reach the unlocked portal.
 
-![AR Maze Game](https://img.shields.io/badge/AR-WebAR-blue) ![ZapWorks](https://img.shields.io/badge/ZapWorks-Three.js-green) ![License](https://img.shields.io/badge/license-MIT-orange)
+The game uses procedural Three.js geometry for the robot, walls, drones, traps, collectibles, portal, and particle effects. Its sound effects are synthesized with WebAudio, so no model or audio downloads are required after the app loads.
 
-## 🎯 Features
+## Features
 
-- ✅ **Image Tracking** - Works on any conference lanyard or card
-- ✅ **3D Maze** - Navigate through walls with collision detection
-- ✅ **Touch Controls** - Screen-anchored directional buttons
-- ✅ **Win State** - Reach the exit to complete the maze
-- ✅ **Mobile-First** - Optimized for phones and tablets
-- ✅ **No App Required** - Pure WebAR, works in browser
+- MindAR image tracking with a compiled `.mind` target
+- Three handcrafted maze levels with distinct palettes and time limits
+- Fixed-step movement and grid collision
+- Animated robot, patrol drones, pulse traps, checkpoints, and exit portals
+- Energy-core collection, lives, score, timer, and one-to-three-star results
+- Touch D-pad, dash ability, sound toggle, and keyboard controls
+- Automatic pause while the image target is lost
+- Restart, replay, and next-level flows
+- Mobile-first UI with safe-area and reduced-motion support
 
-## 🚀 Quick Start
+## Requirements
 
-### Prerequisites
+- A current Node.js release
+- A modern mobile browser with camera access
+- HTTPS or another browser-recognized secure context
+- The printed target, or a second screen displaying it
 
-- Node.js 18+ ([Download here](https://nodejs.org/))
-- A modern smartphone (iOS/Android)
-- Printer (to print the tracking card)
+Camera permission and image-tracking quality cannot be validated by a desktop build alone. Test the finished experience on the intended phones and tablets.
 
-### Installation
+## Install and run
 
 ```bash
-# Clone the repository
-git clone https://github.com/NathanHor22/maze-webAR-game.git
-cd maze-webAR-game
-
-# Install dependencies
-npm install
-
-# Start development server
+npm install --ignore-scripts
+npm run typecheck
 npm run dev
 ```
 
-The dev server will start at `https://localhost:5173`
+Vite serves the project over HTTPS on port `5173` and exposes it to the local network. Open the network address shown by Vite on a phone connected to the same network. The certificate must be trusted by the phone before its browser will grant camera access.
 
-### 📱 Testing on Your Phone
-
-1. **Make sure your phone and computer are on the same WiFi network**
-2. Find your computer's local IP address:
-   - Mac: `ifconfig | grep inet`
-   - Windows: `ipconfig`
-3. On your phone, visit: `https://YOUR_IP:5173`
-4. Accept the security warning (self-signed certificate)
-5. Grant camera permissions
-6. Point your camera at the tracking card
-
-## 🖼️ Tracking Card Setup
-
-### Option 1: Print the Tracking Target
-
-1. Download the tracking image from `/public/targets/tracking-card.png` (will be generated)
-2. Print on A4/Letter paper (at least 15cm × 10cm)
-3. For best results: matte finish, no glare
-
-### Option 2: Display on Screen
-
-For quick testing, display the tracking image fullscreen on your laptop and point your phone at it.
-
-## 🎮 How to Play
-
-1. **Scan the tracking card** - Point camera at printed card
-2. **Wait for tracking lock** - Green status indicator appears
-3. **Navigate the maze** - Use the 4 directional buttons:
-   - ▲ Move forward
-   - ▼ Move backward
-   - ◀ Move left
-   - ▶ Move right
-4. **Reach the exit** - Green glowing circle is the goal
-5. **Win!** - Complete in as few moves as possible
-
-## 📁 Project Structure
-
-```
-maze-webAR-game/
-├── src/
-│   ├── main.ts          # AR initialization & game loop
-│   ├── maze.ts          # Maze generation & collision
-│   ├── player.ts        # Player character (ball)
-│   ├── controls.ts      # Button input handling
-│   ├── style.css        # UI styling
-│   └── index.html       # HTML entry point
-├── assets/
-│   └── targets/         # Tracking images
-├── public/              # Static assets
-├── package.json
-├── vite.config.js       # Dev server config
-├── tsconfig.json        # TypeScript config
-└── README.md
-```
-
-## 🛠️ Development
-
-### Building for Production
+For a production build:
 
 ```bash
 npm run build
+npm run preview
 ```
 
-Output goes to `/dist` folder - deploy this to any static host.
+Deploy the generated `dist/` directory to an HTTPS static host. This repository does not assume a deployment provider or URL.
 
-### Deployment Options
+## Tracking target
 
-#### Netlify (Recommended)
+The repository includes both parts required for testing:
+
+- Printable/displayable artwork: `public/assets/targets/mind-the-gap-target.png`
+- MindAR tracking data loaded by the app: `public/assets/targets/mind-the-gap-target.mind`
+
+Print the PNG flat on matte paper, or show it at a large size on another screen. Keep the full artwork visible with even lighting and minimal glare.
+
+If the PNG changes, regenerate the compiled target before building:
+
 ```bash
-# Install Netlify CLI
-npm install -g netlify-cli
-
-# Build and deploy
-npm run build
-netlify deploy --prod
+npm run compile:target
 ```
 
-#### GitHub Pages
+The command reads the PNG and overwrites the `.mind` file at the paths above. It also accepts optional input and output paths:
+
 ```bash
-# Build
-npm run build
-
-# Push dist folder to gh-pages branch
-git subtree push --prefix dist origin gh-pages
+npm run compile:target -- path/to/source.png path/to/output.mind
 ```
 
-#### Vercel
-```bash
-# Install Vercel CLI
-npm install -g vercel
+## How to play
 
-# Deploy
-vercel --prod
+1. Open the app and tap **Start AR**.
+2. Allow camera access.
+3. Point the camera at `mind-the-gap-target.png` and keep the full target in view.
+4. After the countdown, hold the D-pad to move the robot.
+5. Collect every glowing energy core while avoiding drones and active traps.
+6. Use **Dash** for a short speed burst when available.
+7. Enter the portal after it unlocks.
+8. Complete all three levels and improve your time and star rating.
+
+If tracking is lost during play, the timer and simulation pause. Reacquire the target to continue from the same state.
+
+Desktop controls use the arrow keys or WASD to move and Space to dash.
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `npm install --ignore-scripts` | Install the pinned dependencies without running package lifecycle scripts |
+| `npm run dev` | Start the HTTPS Vite development server |
+| `npm run typecheck` | Run strict TypeScript validation |
+| `npm run build` | Create the production bundle in `dist/` |
+| `npm run preview` | Preview the production build locally |
+| `npm run compile:target` | Compile the test-target PNG into MindAR `.mind` data |
+
+## Architecture
+
+```text
+index.html                         Mobile UI and game-state overlays
+src/main.ts                        AR startup, UI bindings, countdown, and render loop
+src/style.css                      Responsive WebAR presentation
+src/ar/MindARSession.ts            Typed MindAR lifecycle and target-event adapter
+src/ar/index.ts                    AR module exports
+src/game/SynapzeGame.ts            Simulation, progression, collision, and public API
+src/game/levels.ts                 Three level definitions and authoring validation
+src/game/models.ts                 Procedural low-poly Three.js models
+src/game/particles.ts              Lightweight particle pool
+src/game/audio.ts                  Generated WebAudio cues
+src/game/types.ts                  Game callbacks, events, snapshots, and options
+scripts/compile-mind-target.mjs     Node-based target compiler
+public/assets/targets/              Test artwork and compiled tracking data
 ```
 
-## 🧩 Customizing the Maze
+`MindARSession` owns the camera, renderer, scene, and image anchor. `SynapzeGame` attaches its tabletop root to that anchor and exposes input, update, tracking visibility, restart, and level-progression methods. `src/main.ts` connects those systems to the DOM without placing UI concerns in the game core.
 
-Edit `src/maze.ts` to change the maze layout:
+## Troubleshooting
 
-```typescript
-const MAZE_LAYOUT = [
-  [1, 1, 1, 1, 1],  // 1 = wall
-  [1, 0, 0, 0, 1],  // 0 = path
-  [1, 0, 1, 0, 1],
-  [1, 0, 0, 0, 2],  // 2 = exit
-  [1, 1, 1, 1, 1]
-];
-```
+### Camera does not start
 
-### Adjusting Difficulty
+- Confirm the page is a trusted HTTPS context.
+- Allow camera access in the browser's site settings.
+- Close other apps using the camera, then reload.
+- Prefer a rear-facing camera on a physical phone.
 
-- **Cell size**: Change `CELL_SIZE` in `maze.ts` (smaller = harder)
-- **Maze size**: Expand the `MAZE_LAYOUT` array
-- **Player speed**: Adjust `moveSpeed` in `player.ts`
+### Target does not lock or drifts
 
-## 🎨 Styling
+- Keep the entire target inside the camera frame.
+- Use bright, even light and avoid reflections.
+- Keep the print or display flat and still.
+- Increase the displayed or printed target size.
+- Test on more than one device; camera focus and tracking performance vary.
 
-All UI elements are in `src/style.css`:
-- **Colors**: Search for color hex codes (e.g., `#4ECDC4`)
-- **Button size**: Adjust `.control-btn` width/height
-- **Positioning**: Modify `position`, `top`, `bottom`, etc.
+### Game board disappears
 
-## 🐛 Troubleshooting
+This is expected when the target is obscured or leaves the frame. Gameplay pauses until tracking returns.
 
-### Camera Not Working
-- Check HTTPS is enabled (required for WebAR)
-- Grant camera permissions when prompted
-- Try a different browser (Chrome/Safari recommended)
+## License
 
-### Tracking Not Stable
-- Ensure good lighting
-- Print tracking card larger (20cm+)
-- Use matte paper (not glossy)
-- Keep card flat and steady
-
-### Buttons Not Responding
-- Check console for errors (F12)
-- Ensure pointer-events are enabled in CSS
-- Try on different device
-
-## 📚 Tech Stack
-
-- **[ZapWorks](https://zap.works/)** - Image tracking SDK
-- **[Three.js](https://threejs.org/)** - 3D rendering
-- **[Vite](https://vitejs.dev/)** - Build tool & dev server
-- **[TypeScript](https://www.typescriptlang.org/)** - Type safety
-
-## 📝 License
-
-MIT © Nathan Hor
-
-## 🤝 Contributing
-
-Contributions welcome! Please open an issue or PR.
-
-## 🔗 Links
-
-- [ZapWorks Documentation](https://docs.zap.works/)
-- [Three.js Documentation](https://threejs.org/docs/)
-- [Report Issues](https://github.com/NathanHor22/maze-webAR-game/issues)
-
----
-
-**Built with ❤️ for learning WebAR fundamentals**
+MIT
