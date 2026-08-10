@@ -49,7 +49,7 @@
             <span class="mission-number">01</span>
             <div>
               <strong>Guide the runner home.</strong>
-              <p>Scan the mission card, collect every energy core, and escape before the grid collapses.</p>
+              <p>The runner moves on its own. Tap an arrow to turn, collect every core, then reach the portal.</p>
             </div>
           </div>
 
@@ -68,7 +68,7 @@
             <span id="loading-label">Calibrating AR systems...</span>
           </div>
 
-          <p class="start-note">Best experienced with sound on and room to move.</p>
+          <p class="start-note">Tap once to steer&mdash;no holding required.</p>
         </div>
 
         <div class="start-footer" aria-hidden="true">
@@ -186,28 +186,28 @@
       </section>
 
       <!-- Touch controls are kept separate so gameplay can disable them as one unit. -->
-      <nav id="game-controls" class="game-controls" aria-label="Player controls" hidden>
-        <div class="dpad" aria-label="Movement controls">
-          <button id="btn-up" class="control-button control-button--up" type="button" aria-label="Move up">
-            <span aria-hidden="true">&#8593;</span>
-          </button>
-          <button id="btn-left" class="control-button control-button--left" type="button" aria-label="Move left">
-            <span aria-hidden="true">&#8592;</span>
-          </button>
-          <span class="dpad-center" aria-hidden="true"><span></span></span>
-          <button id="btn-right" class="control-button control-button--right" type="button" aria-label="Move right">
-            <span aria-hidden="true">&#8594;</span>
-          </button>
-          <button id="btn-down" class="control-button control-button--down" type="button" aria-label="Move down">
-            <span aria-hidden="true">&#8595;</span>
-          </button>
+      <nav id="game-controls" class="game-controls" aria-label="Steering controls" hidden>
+        <div class="steering-control">
+          <p class="steering-hint" aria-hidden="true">
+            <strong>Auto-run</strong>
+            <span>Tap to turn</span>
+          </p>
+          <div class="dpad" role="group" aria-label="Choose the runner's direction. The runner moves automatically.">
+            <button id="btn-up" class="control-button control-button--up" type="button" aria-label="Steer up" aria-pressed="false">
+              <span aria-hidden="true">&#8593;</span>
+            </button>
+            <button id="btn-left" class="control-button control-button--left" type="button" aria-label="Steer left" aria-pressed="false">
+              <span aria-hidden="true">&#8592;</span>
+            </button>
+            <span class="dpad-center" aria-hidden="true"><span></span></span>
+            <button id="btn-right" class="control-button control-button--right" type="button" aria-label="Steer right" aria-pressed="false">
+              <span aria-hidden="true">&#8594;</span>
+            </button>
+            <button id="btn-down" class="control-button control-button--down" type="button" aria-label="Steer down" aria-pressed="false">
+              <span aria-hidden="true">&#8595;</span>
+            </button>
+          </div>
         </div>
-
-        <button id="btn-dash" class="dash-button" type="button" aria-label="Dash">
-          <span class="dash-rings" aria-hidden="true"><span></span></span>
-          <strong>Dash</strong>
-          <small>Action</small>
-        </button>
       </nav>
 
       <!-- Mission result states. -->

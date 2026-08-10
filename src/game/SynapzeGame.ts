@@ -33,6 +33,17 @@ import type {
 const FIXED_STEP = 1 / 90;
 const MAX_FRAME_DELTA = 0.1;
 const SNAPSHOT_INTERVAL = 0.1;
+const CHARACTER_VISUAL_SCALE = 1.5;
+const GRID_CENTER_EPSILON = 1e-5;
+
+const DIRECTION_VECTORS: Readonly<Record<Direction, Readonly<{ x: number; z: number }>>> = {
+  up: { x: 0, z: -1 },
+  down: { x: 0, z: 1 },
+  left: { x: -1, z: 0 },
+  right: { x: 1, z: 0 },
+};
+
+const INITIAL_DIRECTION_ORDER: readonly Direction[] = ['right', 'down', 'left', 'up'];
 
 interface CollectibleRuntime {
   readonly point: GridPoint;
@@ -68,9 +79,9 @@ interface TrapRuntime {
  *     renderer.render(scene, camera);
  *   });
  *
- * Bind hold controls with setDirection('up', true) on pointerdown and
- * setDirection('up', false) on pointerup/cancel. Call setTrackingVisible from
- * MindAR targetFound/targetLost events. See GameCallbacks in types.ts.
+ * Bind each steering control to steer('up') (or another direction) on a tap.
+ * Movement follows the current heading until another direction is requested.
+ * Call setTrackingVisible from MindAR targetFound/targetLost events.
  */
 export class SynapzeGame {
   public readonly root = new THREE.Group();
@@ -80,8 +91,6 @@ export class SynapzeGame {
   private readonly boardWidth: number;
   private readonly maxLives: number;
   private readonly audio: GameAudio;
-  private readonly heldDirections = new Set<Direction>();
-  private readonly moveInput = new THREE.Vector2();
   private readonly tempVector = new THREE.Vector3();
 
   private levelContent: THREE.Group | null = null;
@@ -116,10 +125,11 @@ export class SynapzeGame {
   private levelStartScore = 0;
   private lives: number;
   private invulnerabilitySeconds = 0;
-  private dashSeconds = 0;
-  private dashCooldownSeconds = 0;
   private stars = 0;
   private disposed = false;
+  private currentDirection: Direction | null = null;
+  private queuedDirection: Direction | null = null;
+  private playerIsMoving = false;
 
   public constructor(options: SynapzeGameOptions) {
     this.callbacks = options.callbacks ?? {};
@@ -159,6 +169,7 @@ export class SynapzeGame {
     return Object.freeze({
       state: this.state,
       pauseReason: this.pauseReason,
+      steeringDirection: this.queuedDirection ?? this.currentDirection,
       levelIndex: this.levelIndex,
       levelCount: LEVELS.length,
       levelId: this.level.id,
@@ -172,14 +183,13 @@ export class SynapzeGame {
       cellsCollected,
       totalCells,
       exitUnlocked: cellsCollected === totalCells,
-      dashCooldownSeconds: this.dashCooldownSeconds,
       stars: this.stars,
       isTracking: this.isTracking,
       canAdvance: this.state === 'won' && this.levelIndex < LEVELS.length - 1,
     });
   }
 
-  /** Begins the timer. Movement input also starts a ready level automatically. */
+  /** Begins the timer and automatic movement. Steering can also start a ready level. */
   public start(): void {
     if (this.disposed || (this.state !== 'ready' && this.state !== 'paused')) return;
     if (!this.isTracking) {
@@ -211,56 +221,36 @@ export class SynapzeGame {
     }
   }
 
-  /** Set normalized analog movement: x right, z/down positive. */
+  /**
+   * Convert analog input to a queued cardinal heading. A neutral input does not
+   * stop movement, matching the tap-to-steer digital controls.
+   */
   public setMoveInput(x: number, z: number): void {
     if (this.disposed) return;
-    this.heldDirections.clear();
-    this.moveInput.set(
-      THREE.MathUtils.clamp(Number.isFinite(x) ? x : 0, -1, 1),
-      THREE.MathUtils.clamp(Number.isFinite(z) ? z : 0, -1, 1),
+    const horizontal = THREE.MathUtils.clamp(Number.isFinite(x) ? x : 0, -1, 1);
+    const vertical = THREE.MathUtils.clamp(Number.isFinite(z) ? z : 0, -1, 1);
+    if (Math.max(Math.abs(horizontal), Math.abs(vertical)) < 0.2) return;
+    this.steer(
+      Math.abs(horizontal) >= Math.abs(vertical)
+        ? (horizontal < 0 ? 'left' : 'right')
+        : (vertical < 0 ? 'up' : 'down'),
     );
-    if (this.moveInput.lengthSq() > 1) this.moveInput.normalize();
-    if (this.moveInput.lengthSq() > 0 && this.state === 'ready') this.start();
   }
 
-  /** Hold/release digital controls. Multiple directions combine diagonally. */
-  public setDirection(direction: Direction, pressed: boolean): void {
+  /** Queue a cardinal turn; it is retained until a matching junction is reached. */
+  public steer(direction: Direction): void {
     if (this.disposed) return;
-    if (pressed) this.heldDirections.add(direction);
-    else this.heldDirections.delete(direction);
-    const horizontal = Number(this.heldDirections.has('right')) - Number(this.heldDirections.has('left'));
-    const vertical = Number(this.heldDirections.has('down')) - Number(this.heldDirections.has('up'));
-    this.moveInput.set(horizontal, vertical);
-    if (this.moveInput.lengthSq() > 1) this.moveInput.normalize();
-    if (pressed && this.state === 'ready') this.start();
+    this.queuedDirection = direction;
+    if (this.state === 'ready') this.start();
+    else this.emitSnapshot(true);
   }
 
-  /** Short movement burst with a brief hazard shield. Returns false while unavailable. */
-  public dash(): boolean {
-    if (
-      this.disposed
-      || this.state !== 'running'
-      || !this.isTracking
-      || this.moveInput.lengthSq() <= 0
-      || this.dashCooldownSeconds > 0
-      || this.robot === null
-    ) {
-      return false;
-    }
-
-    this.dashSeconds = 0.24;
-    this.dashCooldownSeconds = 1.15;
-    this.invulnerabilitySeconds = Math.max(this.invulnerabilitySeconds, 0.3);
-    this.particles?.emit(
-      this.robot.group.position,
-      this.level.palette.glow,
-      12,
-      this.cellSize * 3.5,
-      0.42,
-    );
-    this.audio.play('checkpoint');
-    this.emitSnapshot(true);
-    return true;
+  /**
+   * Backwards-compatible digital control adapter. Presses steer and releases
+   * are intentionally ignored so the character keeps moving automatically.
+   */
+  public setDirection(direction: Direction, pressed: boolean): void {
+    if (pressed) this.steer(direction);
   }
 
   public pause(): void {
@@ -334,7 +324,6 @@ export class SynapzeGame {
     this.cleanupLevel();
     this.root.removeFromParent();
     this.audio.dispose();
-    this.heldDirections.clear();
   }
 
   private loadLevel(index: number, preserveScore: boolean, startImmediately: boolean): void {
@@ -352,22 +341,22 @@ export class SynapzeGame {
     this.snapshotClock = 0;
     this.lives = this.maxLives;
     this.invulnerabilitySeconds = 0;
-    this.dashSeconds = 0;
-    this.dashCooldownSeconds = 0;
     this.stars = 0;
-    this.moveInput.set(0, 0);
-    this.heldDirections.clear();
+    this.currentDirection = null;
+    this.queuedDirection = null;
+    this.playerIsMoving = false;
 
     this.mapHeight = this.level.map.length;
     this.mapWidth = this.level.map[0].length;
     this.cellSize = this.boardWidth / this.mapWidth;
     this.playerRadius = this.cellSize * 0.245;
-    this.playerSpeed = this.cellSize * 3.35;
+    this.playerSpeed = this.cellSize * 2.7;
     this.levelContent = new THREE.Group();
     this.levelContent.name = `Level: ${this.level.name}`;
     this.tabletopRoot.add(this.levelContent);
     this.buildBoard();
     this.buildActors();
+    this.chooseAutomaticHeading(this.checkpointPoint);
 
     this.emitEvent({ type: 'level-loaded', levelIndex: index, levelId: this.level.id });
     this.changeState('ready', null, true);
@@ -484,7 +473,7 @@ export class SynapzeGame {
     this.checkpointPoint = start;
     this.checkpointReached = false;
 
-    this.robot = createRobot(this.cellSize * 0.58, accent);
+    this.robot = createRobot(this.cellSize * 0.58 * CHARACTER_VISUAL_SCALE, accent);
     this.gridToWorld(start, this.robot.group.position);
     this.levelContent.add(this.robot.group);
 
@@ -508,7 +497,7 @@ export class SynapzeGame {
     }
 
     this.patrols = this.level.patrols.map((definition) => {
-      const rig = createDrone(this.cellSize * 0.72, 0xff315d);
+      const rig = createDrone(this.cellSize * 0.72 * CHARACTER_VISUAL_SCALE, 0xff315d);
       const from = this.gridToWorld(definition.path[0], new THREE.Vector3());
       const to = this.gridToWorld(definition.path[1], new THREE.Vector3());
       rig.group.position.lerpVectors(from, to, THREE.MathUtils.clamp(definition.phase ?? 0, 0, 1));
@@ -532,8 +521,6 @@ export class SynapzeGame {
     this.elapsedSeconds += deltaSeconds;
     this.simulationTime += deltaSeconds;
     this.invulnerabilitySeconds = Math.max(0, this.invulnerabilitySeconds - deltaSeconds);
-    this.dashSeconds = Math.max(0, this.dashSeconds - deltaSeconds);
-    this.dashCooldownSeconds = Math.max(0, this.dashCooldownSeconds - deltaSeconds);
     if (this.elapsedSeconds >= this.level.timeLimit) {
       this.lose('time');
       return;
@@ -549,18 +536,147 @@ export class SynapzeGame {
   }
 
   private updatePlayer(deltaSeconds: number): void {
-    if (this.robot === null || this.moveInput.lengthSq() <= 0) return;
-    const speedMultiplier = this.dashSeconds > 0 ? 2.45 : 1;
-    const distance = this.playerSpeed * speedMultiplier * deltaSeconds;
-    const deltaX = this.moveInput.x * distance;
-    const deltaZ = this.moveInput.y * distance;
+    if (this.robot === null) {
+      this.playerIsMoving = false;
+      return;
+    }
     const position = this.robot.group.position;
+    const previousX = position.x;
+    const previousZ = position.z;
 
-    const candidateX = position.x + deltaX;
-    if (this.canOccupy(candidateX, position.z)) position.x = candidateX;
-    const candidateZ = position.z + deltaZ;
-    if (this.canOccupy(position.x, candidateZ)) position.z = candidateZ;
-    this.robot.group.rotation.y = Math.atan2(this.moveInput.x, this.moveInput.y);
+    this.movePlayer(this.playerSpeed * deltaSeconds);
+    this.playerIsMoving = Math.hypot(position.x - previousX, position.z - previousZ) > 1e-7;
+    if (this.currentDirection !== null) {
+      const vector = DIRECTION_VECTORS[this.currentDirection];
+      this.robot.group.rotation.y = Math.atan2(vector.x, vector.z);
+    }
+  }
+
+  /** Move along corridor center lines, consuming distance at each grid center. */
+  private movePlayer(distance: number): void {
+    if (this.robot === null || distance <= 0) return;
+    const position = this.robot.group.position;
+    let remaining = distance;
+    let guard = 0;
+
+    while (remaining > 1e-8 && guard < 12) {
+      guard += 1;
+      this.applyQueuedDirection(position);
+      if (this.currentDirection === null) return;
+
+      const centeredPoint = this.centeredGridPoint(position);
+      if (centeredPoint !== null && !this.canLeaveCell(centeredPoint, this.currentDirection)) {
+        return;
+      }
+
+      const targetPoint = this.nextGridCenter(position, this.currentDirection);
+      if (targetPoint === null) return;
+      const target = this.gridToWorld(targetPoint, this.tempVector);
+      const distanceToTarget = Math.hypot(target.x - position.x, target.z - position.z);
+      if (distanceToTarget <= 1e-8) {
+        position.x = target.x;
+        position.z = target.z;
+        continue;
+      }
+
+      const step = Math.min(remaining, distanceToTarget);
+      const vector = DIRECTION_VECTORS[this.currentDirection];
+      const candidateX = position.x + vector.x * step;
+      const candidateZ = position.z + vector.z * step;
+      if (!this.canOccupy(candidateX, candidateZ)) return;
+      position.x = candidateX;
+      position.z = candidateZ;
+      remaining -= step;
+
+      if (distanceToTarget - step <= 1e-8) {
+        position.x = target.x;
+        position.z = target.z;
+      }
+    }
+  }
+
+  private applyQueuedDirection(position: THREE.Vector3): void {
+    const requested = this.queuedDirection;
+    if (requested === null) return;
+
+    if (requested === this.currentDirection) {
+      this.queuedDirection = null;
+      return;
+    }
+
+    if (this.currentDirection !== null) {
+      const current = DIRECTION_VECTORS[this.currentDirection];
+      const next = DIRECTION_VECTORS[requested];
+      if (current.x + next.x === 0 && current.z + next.z === 0) {
+        this.setCurrentDirection(requested);
+        this.queuedDirection = null;
+        return;
+      }
+    }
+
+    const point = this.centeredGridPoint(position);
+    if (point !== null && this.canLeaveCell(point, requested)) {
+      this.setCurrentDirection(requested);
+      this.queuedDirection = null;
+    }
+  }
+
+  private chooseAutomaticHeading(point: GridPoint): void {
+    if (this.queuedDirection !== null && this.canLeaveCell(point, this.queuedDirection)) {
+      this.setCurrentDirection(this.queuedDirection);
+      this.queuedDirection = null;
+      return;
+    }
+    if (this.currentDirection !== null && this.canLeaveCell(point, this.currentDirection)) return;
+    this.setCurrentDirection(
+      INITIAL_DIRECTION_ORDER.find((direction) => this.canLeaveCell(point, direction)) ?? null,
+    );
+  }
+
+  private setCurrentDirection(direction: Direction | null): void {
+    this.currentDirection = direction;
+  }
+
+  private centeredGridPoint(position: THREE.Vector3): GridPoint | null {
+    const gridX = position.x / this.cellSize + (this.mapWidth - 1) / 2;
+    const gridZ = position.z / this.cellSize + (this.mapHeight - 1) / 2;
+    const col = Math.round(gridX);
+    const row = Math.round(gridZ);
+    if (
+      Math.abs(gridX - col) > GRID_CENTER_EPSILON
+      || Math.abs(gridZ - row) > GRID_CENTER_EPSILON
+      || col < 0
+      || col >= this.mapWidth
+      || row < 0
+      || row >= this.mapHeight
+    ) {
+      return null;
+    }
+    return { col, row };
+  }
+
+  private nextGridCenter(position: THREE.Vector3, direction: Direction): GridPoint | null {
+    const gridX = position.x / this.cellSize + (this.mapWidth - 1) / 2;
+    const gridZ = position.z / this.cellSize + (this.mapHeight - 1) / 2;
+    const vector = DIRECTION_VECTORS[direction];
+    const col = vector.x > 0
+      ? Math.ceil(gridX + GRID_CENTER_EPSILON)
+      : vector.x < 0
+        ? Math.floor(gridX - GRID_CENTER_EPSILON)
+        : Math.round(gridX);
+    const row = vector.z > 0
+      ? Math.ceil(gridZ + GRID_CENTER_EPSILON)
+      : vector.z < 0
+        ? Math.floor(gridZ - GRID_CENTER_EPSILON)
+        : Math.round(gridZ);
+    if (col < 0 || col >= this.mapWidth || row < 0 || row >= this.mapHeight) return null;
+    return { col, row };
+  }
+
+  private canLeaveCell(point: GridPoint, direction: Direction): boolean {
+    const vector = DIRECTION_VECTORS[direction];
+    const tile = this.level.map[point.row + vector.z]?.[point.col + vector.x];
+    return tile !== undefined && tile !== '#';
   }
 
   private canOccupy(x: number, z: number): boolean {
@@ -722,6 +838,7 @@ export class SynapzeGame {
       return;
     }
     this.gridToWorld(this.checkpointPoint, this.robot.group.position);
+    this.chooseAutomaticHeading(this.checkpointPoint);
     this.invulnerabilitySeconds = 1.45;
     this.emitSnapshot(true);
   }
@@ -757,7 +874,7 @@ export class SynapzeGame {
   }
 
   private updatePresentation(deltaSeconds: number): void {
-    const moving = this.state === 'running' && this.moveInput.lengthSq() > 0;
+    const moving = this.state === 'running' && this.playerIsMoving;
     this.robot?.update(
       this.visualTime,
       moving,

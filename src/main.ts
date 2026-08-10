@@ -44,7 +44,6 @@ const ui = {
   down: element<HTMLButtonElement>('btn-down'),
   left: element<HTMLButtonElement>('btn-left'),
   right: element<HTMLButtonElement>('btn-right'),
-  dash: element<HTMLButtonElement>('btn-dash'),
   soundToggle: element<HTMLButtonElement>('sound-toggle'),
   soundLabel: document.querySelector<HTMLElement>('#sound-toggle .sound-label'),
   winScreen: element<HTMLElement>('win-screen'),
@@ -59,6 +58,13 @@ const ui = {
   replayWin: element<HTMLButtonElement>('btn-play-again-win'),
   replayLose: element<HTMLButtonElement>('btn-play-again-lose'),
   returnToScan: element<HTMLButtonElement>('btn-return-to-scan'),
+};
+
+const directionButtons: Readonly<Record<Direction, HTMLButtonElement>> = {
+  up: ui.up,
+  down: ui.down,
+  left: ui.left,
+  right: ui.right,
 };
 
 let session: MindARSession | null = null;
@@ -135,20 +141,18 @@ function cancelCountdown(): void {
   ui.countdown.hidden = true;
 }
 
-function releaseDirections(): void {
-  if (game === null) return;
-  for (const direction of DIRECTIONS) game.setDirection(direction, false);
-}
-
 function renderSnapshot(snapshot: GameSnapshot): void {
   ui.level.textContent = String(snapshot.levelIndex + 1).padStart(2, '0');
   ui.collected.textContent = String(snapshot.cellsCollected);
   ui.coreTotal.textContent = String(snapshot.totalCells);
   ui.timer.textContent = formatTime(Math.ceil(snapshot.remainingSeconds));
   ui.timer.classList.toggle('is-critical', snapshot.remainingSeconds <= 10);
-  ui.dash.disabled = snapshot.state !== 'running'
-    || !snapshot.isTracking
-    || snapshot.dashCooldownSeconds > 0;
+  for (const direction of DIRECTIONS) {
+    directionButtons[direction].setAttribute(
+      'aria-pressed',
+      String(snapshot.steeringDirection === direction),
+    );
+  }
 
   const fullHearts = '\u2665'.repeat(snapshot.lives);
   const emptyHearts = '\u2661'.repeat(snapshot.maxLives - snapshot.lives);
@@ -229,7 +233,6 @@ function handleGameState(state: GameState, snapshot: GameSnapshot): void {
     return;
   }
 
-  releaseDirections();
   ui.controls.hidden = true;
   if (state === 'paused') {
     ui.targetLost.hidden = snapshot.pauseReason !== 'tracking';
@@ -310,7 +313,6 @@ function handleTargetFound(): void {
 function handleTargetLost(): void {
   if (game === null) return;
   cancelCountdown();
-  releaseDirections();
   game.setTrackingVisible(false);
   ui.controls.hidden = true;
 
@@ -332,7 +334,12 @@ function createRuntime(): void {
     imageTargetSrc: TARGET_SRC,
     maxTrack: 1,
     ui: { loading: false, scanning: false, error: false },
-    tracking: { warmupTolerance: 3, missTolerance: 6 },
+    tracking: {
+      filterMinCF: 0.0007,
+      filterBeta: 40,
+      warmupTolerance: 5,
+      missTolerance: 8,
+    },
   });
 
   session.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -408,7 +415,9 @@ async function startAr(): Promise<void> {
     hasTrackedTarget = false;
     clock.start();
     activeSession.renderer.setAnimationLoop(() => {
-      activeGame.update(clock.getDelta());
+      const deltaSeconds = clock.getDelta();
+      activeSession.update(deltaSeconds);
+      activeGame.update(deltaSeconds);
       activeSession.renderer.render(activeSession.scene, activeSession.camera);
     });
 
@@ -436,24 +445,19 @@ async function startAr(): Promise<void> {
 }
 
 function bindDirection(button: HTMLButtonElement, direction: Direction): void {
-  const press = (event: PointerEvent): void => {
+  button.addEventListener('click', (event) => {
     event.preventDefault();
-    button.setPointerCapture?.(event.pointerId);
-    void game?.unlockAudio();
-    game?.setDirection(direction, true);
-  };
-  const release = (event: PointerEvent): void => {
-    event.preventDefault();
-    game?.setDirection(direction, false);
-  };
-  button.addEventListener('pointerdown', press);
-  button.addEventListener('pointerup', release);
-  button.addEventListener('pointercancel', release);
-  button.addEventListener('pointerleave', release);
-}
-
-function triggerDash(): void {
-  game?.dash();
+    const activeGame = game;
+    if (
+      activeGame === null
+      || activeGame.snapshot.state !== 'running'
+      || !activeGame.snapshot.isTracking
+    ) {
+      return;
+    }
+    void activeGame.unlockAudio();
+    activeGame.steer(direction);
+  });
 }
 
 function directionForKey(key: string): Direction | null {
@@ -480,11 +484,6 @@ bindDirection(ui.right, 'right');
 
 ui.startButton.addEventListener('click', () => void startAr());
 ui.retryCamera.addEventListener('click', () => void startAr());
-ui.dash.addEventListener('pointerdown', (event) => {
-  event.preventDefault();
-  void game?.unlockAudio();
-  triggerDash();
-});
 
 ui.soundToggle.addEventListener('click', () => {
   soundEnabled = !soundEnabled;
@@ -525,24 +524,11 @@ window.addEventListener('keydown', (event) => {
   const direction = directionForKey(event.key);
   if (direction !== null) {
     event.preventDefault();
-    game?.setDirection(direction, true);
-  } else if (event.code === 'Space' && !event.repeat) {
-    event.preventDefault();
-    triggerDash();
+    if (!event.repeat) game.steer(direction);
   }
 });
-
-window.addEventListener('keyup', (event) => {
-  const direction = directionForKey(event.key);
-  if (direction === null) return;
-  event.preventDefault();
-  game?.setDirection(direction, false);
-});
-
-window.addEventListener('blur', releaseDirections);
 window.addEventListener('pagehide', (event) => {
   cancelCountdown();
-  releaseDirections();
   if (event.persisted) return;
   game?.dispose();
   game = null;

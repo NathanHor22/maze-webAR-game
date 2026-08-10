@@ -39,14 +39,21 @@ Keep the runtime path in `src/main.ts` aligned with the generated `.mind` file.
 1. Open the app on a phone over trusted HTTPS.
 2. Tap **Start AR** and grant camera permission.
 3. Scan the generated target and confirm the board is anchored to it.
-4. Wait for the countdown, then move with the touch D-pad.
-5. Confirm Dash briefly increases movement and then enters cooldown.
+4. Wait for the countdown and confirm the robot begins moving automatically.
+5. Tap a D-pad direction once and confirm the robot continues after release; tap before a corner and confirm the requested turn is queued until it becomes legal.
 6. Collect all energy cores, avoid drones and active traps, and enter the unlocked portal.
 7. Complete or inspect all three levels, including win/loss and replay controls.
-8. Move the target out of view during play and confirm the game pauses and resumes without losing progress.
+8. Briefly interrupt the target view and confirm filtering, presentation smoothing, and miss tolerance prevent excessive jitter or an immediate pause. Keep it out of view and confirm a sustained loss pauses, then resumes without losing progress.
 9. Test sound on/off and generated effects after a user gesture.
 
-Desktop keyboard controls are arrow keys or WASD, with Space for Dash, but desktop input is not a replacement for phone testing.
+Desktop keyboard controls are arrow keys or WASD. Each press steers or queues a turn, and key release does not stop the robot. Desktop input is not a replacement for phone testing.
+
+## Control and tracking behavior
+
+- The runner always advances once gameplay begins. Touch and keyboard input select a desired direction instead of acting as held movement controls.
+- A requested direction remains queued until the next legal turn point. Pointer-up, pointer-cancel, pointer-leave, and key-up events do not stop movement.
+- The robot and patrol-drone models are rendered at 150% of their previous size for easier viewing on a phone.
+- MindAR pose filtering is tuned at the tracking layer. Additional presentation smoothing reduces visible anchor jitter, while a longer miss tolerance bridges short detection gaps before the target-lost pause appears.
 
 ## Active architecture
 

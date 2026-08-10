@@ -36,10 +36,11 @@ Record the phone model, OS, browser/version, target size, and lighting condition
 
 - [ ] Scanner recognizes `mind-the-gap-target.png`
 - [ ] Tabletop board appears aligned with the image plane
-- [ ] Board remains reasonably stable during slow phone movement
+- [ ] Tuned tracking filters and presentation smoothing keep the board reasonably stable during slow phone movement
 - [ ] Tracking works with the target printed on matte paper
 - [ ] Tracking works when the target is displayed on a second screen
-- [ ] Brief partial occlusion is handled without resetting the level
+- [ ] Brief partial occlusion or detection misses are bridged without jitter, pausing, or resetting the level
+- [ ] Sustained target loss beyond the longer miss tolerance shows the target-lost state
 - [ ] Moving the target out of frame shows the target-lost state
 - [ ] Target loss pauses the game timer and hazards
 - [ ] Reacquiring the target resumes the same game state
@@ -49,20 +50,19 @@ Record the phone model, OS, browser/version, target size, and lighting condition
 
 - [ ] First tracking lock starts the visible countdown
 - [ ] D-pad remains screen-anchored while the board tracks
-- [ ] Holding Up moves toward the top of the maze
-- [ ] Holding Down moves toward the bottom of the maze
-- [ ] Holding Left and Right moves in the expected directions
-- [ ] Diagonal multi-touch input is normalized
-- [ ] Releasing, cancelling, or leaving a D-pad button stops that direction
+- [ ] Robot begins moving automatically after the countdown without held input
+- [ ] Tapping each D-pad direction steers in the expected direction
+- [ ] Releasing, cancelling, or leaving a D-pad button does not stop movement
+- [ ] Tapping before a blocked corner queues the requested turn until the path opens
+- [ ] A newer direction tap replaces the previously queued direction
 - [ ] Robot cannot pass through maze walls or outside the board
-- [ ] **Dash** produces a short speed burst
-- [ ] Dash button enters cooldown and becomes available again
-- [ ] Arrow keys/WASD and Space work during desktop testing
-- [ ] Losing focus releases held movement
+- [ ] Arrow-key/WASD presses steer or queue turns during desktop testing
+- [ ] Releasing a keyboard key or losing focus does not stop automatic movement
 
 ## Game mechanics
 
-- [ ] Robot has visible idle and walking animation
+- [ ] Robot and patrol drones are visibly 50% larger without clipping walls or obscuring gameplay
+- [ ] Robot has visible walking animation during automatic movement
 - [ ] Energy cores animate and disappear when collected
 - [ ] HUD core count matches the level total
 - [ ] Portal stays locked until every core is collected

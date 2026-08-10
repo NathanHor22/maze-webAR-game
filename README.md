@@ -6,12 +6,12 @@ The game uses procedural Three.js geometry for the robot, walls, drones, traps, 
 
 ## Features
 
-- MindAR image tracking with a compiled `.mind` target
+- MindAR image tracking with tuned filtering, presentation smoothing, and longer brief-miss tolerance
 - Three handcrafted maze levels with distinct palettes and time limits
-- Fixed-step movement and grid collision
-- Animated robot, patrol drones, pulse traps, checkpoints, and exit portals
+- Automatic Pac-Man-style movement with queued turns and grid collision
+- 50%-larger animated robot and patrol drones, plus pulse traps, checkpoints, and exit portals
 - Energy-core collection, lives, score, timer, and one-to-three-star results
-- Touch D-pad, dash ability, sound toggle, and keyboard controls
+- Tap-to-steer D-pad, sound toggle, and press-to-steer keyboard controls
 - Automatic pause while the image target is lost
 - Restart, replay, and next-level flows
 - Mobile-first UI with safe-area and reduced-motion support
@@ -70,15 +70,15 @@ npm run compile:target -- path/to/source.png path/to/output.mind
 1. Open the app and tap **Start AR**.
 2. Allow camera access.
 3. Point the camera at `mind-the-gap-target.png` and keep the full target in view.
-4. After the countdown, hold the D-pad to move the robot.
-5. Collect every glowing energy core while avoiding drones and active traps.
-6. Use **Dash** for a short speed burst when available.
+4. After the countdown, the robot starts moving automatically. Tap a D-pad arrow once to steer; you do not need to hold it.
+5. You can tap the next direction before reaching a corner. The turn stays queued until that path opens, and releasing the button does not stop the robot.
+6. Collect every glowing energy core while avoiding drones and active traps.
 7. Enter the portal after it unlocks.
 8. Complete all three levels and improve your time and star rating.
 
 If tracking is lost during play, the timer and simulation pause. Reacquire the target to continue from the same state.
 
-Desktop controls use the arrow keys or WASD to move and Space to dash.
+Desktop controls use single arrow-key or WASD presses to steer or queue a turn. Releasing a key does not stop the robot.
 
 ## Commands
 

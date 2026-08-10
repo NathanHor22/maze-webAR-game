@@ -2,13 +2,14 @@
 
 ## Product
 
-**Synapze: Mind the Gap** is a mobile image-tracked WebAR maze game. MindAR anchors a Three.js tabletop board to the supplied test image. The player controls an animated robot, gathers energy cores, avoids hazards, and unlocks the portal across three handcrafted levels.
+**Synapze: Mind the Gap** is a mobile image-tracked WebAR maze game. MindAR anchors a Three.js tabletop board to the supplied test image. The player steers an automatically moving robot, gathers energy cores, avoids hazards, and unlocks the portal across three handcrafted levels.
 
 ## Current feature set
 
 ### AR runtime
 
-- MindAR image tracking with one compiled image target
+- MindAR image tracking with one compiled image target and tuned tracking filters
+- Presentation-layer anchor smoothing and a longer brief-miss tolerance to reduce visible jitter and unnecessary pauses
 - Explicit **Start AR** gesture before camera access
 - Loading, scanning, permission-error, target-found, and target-lost UI states
 - Automatic simulation and timer pause when tracking is lost
@@ -18,16 +19,16 @@
 ### Game
 
 - Three authored maze levels with increasing patrol and trap pressure
-- Fixed-step continuous movement with grid-wall collision
+- Fixed-step automatic movement with grid-wall collision and queued Pac-Man-style turns
 - Energy cores, checkpoint respawns, locked portals, lives, score, timer, and stars
 - Patrol drones and timed pulse-spike traps
-- Touch D-pad, dash cooldown, keyboard movement, and sound preference
+- Tap-to-steer D-pad, press-to-steer keyboard input, and sound preference; releasing input does not stop movement
 - Win, loss, replay, next-level, and return-to-scan flows
 - Best-time storage per level in the browser
 
 ### Presentation
 
-- Procedural low-poly robot, drones, walls, floor, cells, traps, checkpoint, and portal
+- Procedural low-poly robot and patrol drones enlarged by 50%, plus walls, floor, cells, traps, checkpoint, and portal
 - Lightweight pooled particles
 - Synthesized WebAudio cues with no external audio files
 - Responsive mobile UI with safe-area handling and reduced-motion support

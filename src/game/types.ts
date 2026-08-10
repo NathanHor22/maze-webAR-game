@@ -53,6 +53,8 @@ export interface LevelDefinition {
 export interface GameSnapshot {
   readonly state: GameState;
   readonly pauseReason: PauseReason;
+  /** Most recently requested heading, or the active heading when no turn is queued. */
+  readonly steeringDirection: Direction | null;
   readonly levelIndex: number;
   readonly levelCount: number;
   readonly levelId: string;
@@ -66,8 +68,6 @@ export interface GameSnapshot {
   readonly cellsCollected: number;
   readonly totalCells: number;
   readonly exitUnlocked: boolean;
-  /** Remaining simulation time before Dash is available again. */
-  readonly dashCooldownSeconds: number;
   /** Zero until the level is won, then 1-3. */
   readonly stars: number;
   readonly isTracking: boolean;

@@ -1,14 +1,21 @@
-import type {
+import {
   Group,
-  PerspectiveCamera,
-  Scene,
-  WebGLRenderer,
+  Quaternion,
+  Vector3,
+  type Matrix4,
+  type PerspectiveCamera,
+  type Scene,
+  type WebGLRenderer,
 } from 'three';
 import { MindARThree as MindARThreeExport } from 'mind-ar/src/image-target/three.js';
 
 type TargetListener = (event: MindARTargetEvent) => void;
 type Unsubscribe = () => void;
 type MindARUiFlag = 'yes' | 'no';
+
+const POSITION_DAMPING = 11;
+const ROTATION_DAMPING = 14;
+const SCALE_DAMPING = 11;
 
 interface RawMindARAnchor {
   group: Group;
@@ -85,9 +92,9 @@ export interface MindARTargetEvent {
 /**
  * Typed lifecycle boundary around MindAR's untyped Three.js image tracker.
  *
- * MindAR owns the camera, renderer, scene, and target-anchor transform. Game
- * content should be attached to `anchorGroup`; screen-space UI stays outside
- * the group in regular DOM elements.
+ * MindAR owns the camera, renderer, scene, and raw target transform. Game
+ * content attaches to the presentation-smoothed `anchorGroup`; screen-space UI
+ * stays outside the group in regular DOM elements.
  */
 export class MindARSession {
   public readonly scene: Scene;
@@ -100,6 +107,9 @@ export class MindARSession {
   private readonly anchor: RawMindARAnchor;
   private readonly targetFoundListeners = new Set<TargetListener>();
   private readonly targetLostListeners = new Set<TargetListener>();
+  private readonly targetPosition = new Vector3();
+  private readonly targetRotation = new Quaternion();
+  private readonly targetScale = new Vector3(1, 1, 1);
 
   private startPromise: Promise<void> | null = null;
   private rawMayBeRunning = false;
@@ -118,9 +128,19 @@ export class MindARSession {
     this.renderer = this.raw.renderer;
 
     this.anchor = this.raw.addAnchor(this.targetIndex);
-    this.anchorGroup = this.anchor.group;
-    this.anchor.onTargetFound = () => this.emit(this.targetFoundListeners);
-    this.anchor.onTargetLost = () => this.emit(this.targetLostListeners);
+    this.anchorGroup = new Group();
+    this.anchorGroup.name = `Smoothed MindAR target ${this.targetIndex}`;
+    this.anchorGroup.visible = false;
+    this.scene.add(this.anchorGroup);
+    this.anchor.onTargetFound = () => {
+      this.syncPresentationPose(this.anchor.group.matrix, true, 0);
+      this.anchorGroup.visible = true;
+      this.emit(this.targetFoundListeners);
+    };
+    this.anchor.onTargetLost = () => {
+      this.anchorGroup.visible = false;
+      this.emit(this.targetLostListeners);
+    };
   }
 
   public get isRunning(): boolean {
@@ -129,6 +149,12 @@ export class MindARSession {
 
   public get isDisposed(): boolean {
     return this.disposed;
+  }
+
+  /** Smooth the tracked pose once per render frame before drawing the scene. */
+  public update(deltaSeconds: number): void {
+    if (this.disposed || !this.anchor.group.visible) return;
+    this.syncPresentationPose(this.anchor.group.matrix, false, deltaSeconds);
   }
 
   /** Starts camera capture and image tracking. Concurrent calls share one start. */
@@ -226,6 +252,8 @@ export class MindARSession {
 
     this.anchorGroup.removeFromParent();
     this.anchorGroup.clear();
+    this.anchor.group.removeFromParent();
+    this.anchor.group.clear();
 
     this.renderer.setAnimationLoop(null);
     this.renderer.dispose();
@@ -275,7 +303,26 @@ export class MindARSession {
     }
 
     this.rawMayBeRunning = false;
+    this.anchorGroup.visible = false;
     this.cleanUpCameraElement();
+  }
+
+  private syncPresentationPose(matrix: Matrix4, snap: boolean, deltaSeconds: number): void {
+    matrix.decompose(this.targetPosition, this.targetRotation, this.targetScale);
+    if (snap) {
+      this.anchorGroup.position.copy(this.targetPosition);
+      this.anchorGroup.quaternion.copy(this.targetRotation);
+      this.anchorGroup.scale.copy(this.targetScale);
+      return;
+    }
+
+    const delta = Math.min(Math.max(Number.isFinite(deltaSeconds) ? deltaSeconds : 0, 0), 0.1);
+    const positionAlpha = 1 - Math.exp(-POSITION_DAMPING * delta);
+    const rotationAlpha = 1 - Math.exp(-ROTATION_DAMPING * delta);
+    const scaleAlpha = 1 - Math.exp(-SCALE_DAMPING * delta);
+    this.anchorGroup.position.lerp(this.targetPosition, positionAlpha);
+    this.anchorGroup.quaternion.slerp(this.targetRotation, rotationAlpha);
+    this.anchorGroup.scale.lerp(this.targetScale, scaleAlpha);
   }
 
   private cleanUpCameraElement(): void {

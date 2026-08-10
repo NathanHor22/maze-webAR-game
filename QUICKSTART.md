@@ -43,14 +43,14 @@ npm run compile:target
 1. Open the app and tap **Start AR**.
 2. Grant camera permission.
 3. Aim at the test target and wait for the tracking lock and countdown.
-4. Hold the D-pad to guide the robot through the maze.
-5. Collect every energy core, avoid drones and pulse traps, then enter the unlocked portal.
-6. Tap **Dash** for a short speed boost; it has a cooldown.
+4. The robot moves automatically after the countdown. Tap a D-pad arrow once to steer; releasing it does not stop the robot.
+5. Tap the next direction before a corner to queue that turn until the path opens.
+6. Collect every energy core, avoid drones and pulse traps, then enter the unlocked portal.
 7. Use the sound button to mute or restore generated audio cues.
 
-There are three levels. Losing the target automatically pauses movement and the timer; aim back at it to resume.
+There are three levels. The robot and patrol drones are 50% larger for clearer mobile viewing. Tracking uses tuned filtering, presentation smoothing, and a longer brief-miss tolerance; a sustained target loss still pauses movement and the timer until you aim back at it.
 
-Keyboard testing is also available: arrow keys or WASD move, and Space dashes.
+Keyboard testing is also available: press an arrow key or WASD once to steer or queue a turn. Key release does not stop movement.
 
 ## Common problems
 
