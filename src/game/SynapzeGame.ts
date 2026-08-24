@@ -33,7 +33,8 @@ import type {
 const FIXED_STEP = 1 / 90;
 const MAX_FRAME_DELTA = 0.1;
 const SNAPSHOT_INTERVAL = 0.1;
-const CHARACTER_VISUAL_SCALE = 1.5;
+const PLAYER_VISUAL_SCALE = 1.72;
+const DRONE_VISUAL_SCALE = 1.35;
 const GRID_CENTER_EPSILON = 1e-5;
 
 const DIRECTION_VECTORS: Readonly<Record<Direction, Readonly<{ x: number; z: number }>>> = {
@@ -383,16 +384,21 @@ export class SynapzeGame {
     const width = this.mapWidth * this.cellSize;
     const depth = this.mapHeight * this.cellSize;
     const palette = this.level.palette;
-    const baseGeometry = new THREE.BoxGeometry(width + this.cellSize * 0.18, this.cellSize * 0.12, depth + this.cellSize * 0.18);
+    const baseHeight = this.cellSize * 0.15;
+    const baseGeometry = new THREE.BoxGeometry(
+      width + this.cellSize * 0.18,
+      baseHeight,
+      depth + this.cellSize * 0.18,
+    );
     const baseMaterial = new THREE.MeshStandardMaterial({
       color: palette.floor,
       emissive: palette.sky,
-      emissiveIntensity: 0.16,
-      metalness: 0.62,
-      roughness: 0.34,
+      emissiveIntensity: 0.13,
+      metalness: 0.52,
+      roughness: 0.5,
     });
     const base = new THREE.Mesh(baseGeometry, baseMaterial);
-    base.position.y = -this.cellSize * 0.07;
+    base.position.y = -baseHeight * 0.5 - this.cellSize * 0.01;
     base.receiveShadow = true;
     this.levelContent.add(base);
 
@@ -416,11 +422,24 @@ export class SynapzeGame {
     const tileMaterial = new THREE.MeshStandardMaterial({
       color: palette.floorAccent,
       emissive: palette.glow,
-      emissiveIntensity: 0.055,
-      metalness: 0.32,
-      roughness: 0.76,
+      emissiveIntensity: 0.07,
+      metalness: 0.34,
+      roughness: 0.72,
     });
     const tiles = new THREE.InstancedMesh(tileGeometry, tileMaterial, floorPoints.length);
+    const panelGeometry = new THREE.BoxGeometry(
+      this.cellSize * 0.68,
+      this.cellSize * 0.014,
+      this.cellSize * 0.68,
+    );
+    const panelMaterial = new THREE.MeshStandardMaterial({
+      color: palette.floorAccent,
+      emissive: palette.glow,
+      emissiveIntensity: 0.11,
+      metalness: 0.38,
+      roughness: 0.62,
+    });
+    const panels = new THREE.InstancedMesh(panelGeometry, panelMaterial, floorPoints.length);
     const matrix = new THREE.Matrix4();
     const tileColor = new THREE.Color();
     floorPoints.forEach((point, index) => {
@@ -430,40 +449,62 @@ export class SynapzeGame {
       const variation = (point.col + point.row) % 3;
       tileColor.set(palette.floorAccent).offsetHSL(0, 0, variation * 0.018);
       tiles.setColorAt(index, tileColor);
+      matrix.makeTranslation(position.x, this.cellSize * 0.018, position.z);
+      panels.setMatrixAt(index, matrix);
     });
     tiles.receiveShadow = true;
-    this.levelContent.add(tiles);
+    panels.receiveShadow = true;
+    this.levelContent.add(tiles, panels);
 
-    const wallHeight = this.cellSize * 0.52;
-    const wallGeometry = new THREE.BoxGeometry(this.cellSize * 0.92, wallHeight, this.cellSize * 0.92);
+    const wallHeight = this.cellSize * 0.64;
+    const wallGeometry = new THREE.BoxGeometry(this.cellSize * 0.95, wallHeight, this.cellSize * 0.95);
     const wallMaterial = new THREE.MeshStandardMaterial({
       color: palette.wall,
       emissive: palette.sky,
-      emissiveIntensity: 0.12,
-      metalness: 0.58,
-      roughness: 0.38,
-    });
-    const walls = new THREE.InstancedMesh(wallGeometry, wallMaterial, wallPoints.length);
-    const capGeometry = new THREE.BoxGeometry(this.cellSize * 0.79, this.cellSize * 0.045, this.cellSize * 0.79);
-    const capMaterial = new THREE.MeshStandardMaterial({
-      color: palette.wallTop,
-      emissive: palette.glow,
-      emissiveIntensity: 0.5,
-      metalness: 0.4,
+      emissiveIntensity: 0.13,
+      metalness: 0.7,
       roughness: 0.3,
     });
+    const walls = new THREE.InstancedMesh(wallGeometry, wallMaterial, wallPoints.length);
+    const capGeometry = new THREE.BoxGeometry(
+      this.cellSize * 0.84,
+      this.cellSize * 0.05,
+      this.cellSize * 0.84,
+    );
+    const capMaterial = new THREE.MeshStandardMaterial({
+      color: palette.wallTop,
+      emissive: palette.sky,
+      emissiveIntensity: 0.22,
+      metalness: 0.58,
+      roughness: 0.24,
+    });
     const caps = new THREE.InstancedMesh(capGeometry, capMaterial, wallPoints.length);
+    const insetGeometry = new THREE.BoxGeometry(
+      this.cellSize * 0.48,
+      this.cellSize * 0.014,
+      this.cellSize * 0.48,
+    );
+    const insetMaterial = new THREE.MeshStandardMaterial({
+      color: palette.glow,
+      emissive: palette.glow,
+      emissiveIntensity: 0.85,
+      metalness: 0.3,
+      roughness: 0.22,
+    });
+    const wallInsets = new THREE.InstancedMesh(insetGeometry, insetMaterial, wallPoints.length);
     wallPoints.forEach((point, index) => {
       const position = this.gridToWorld(point, this.tempVector);
       matrix.makeTranslation(position.x, wallHeight * 0.5, position.z);
       walls.setMatrixAt(index, matrix);
-      matrix.makeTranslation(position.x, wallHeight + this.cellSize * 0.014, position.z);
+      matrix.makeTranslation(position.x, wallHeight + this.cellSize * 0.016, position.z);
       caps.setMatrixAt(index, matrix);
+      matrix.makeTranslation(position.x, wallHeight + this.cellSize * 0.045, position.z);
+      wallInsets.setMatrixAt(index, matrix);
     });
     walls.castShadow = true;
     walls.receiveShadow = true;
     caps.castShadow = true;
-    this.levelContent.add(walls, caps);
+    this.levelContent.add(walls, caps, wallInsets);
   }
 
   private buildActors(): void {
@@ -473,17 +514,17 @@ export class SynapzeGame {
     this.checkpointPoint = start;
     this.checkpointReached = false;
 
-    this.robot = createRobot(this.cellSize * 0.58 * CHARACTER_VISUAL_SCALE, accent);
+    this.robot = createRobot(this.cellSize * 0.58 * PLAYER_VISUAL_SCALE, accent);
     this.gridToWorld(start, this.robot.group.position);
     this.levelContent.add(this.robot.group);
 
     this.portalPoint = findMapTiles(this.level, 'E')[0];
-    this.portal = createPortal(this.cellSize * 0.86, accent);
+    this.portal = createPortal(this.cellSize * 0.96, accent);
     this.gridToWorld(this.portalPoint, this.portal.group.position);
     this.levelContent.add(this.portal.group);
 
     this.collectibles = findMapTiles(this.level, 'C').map((point) => {
-      const rig = createEnergyCell(this.cellSize * 0.82, accent);
+      const rig = createEnergyCell(this.cellSize * 0.9, accent);
       this.gridToWorld(point, rig.group.position);
       this.levelContent?.add(rig.group);
       return { point, rig, collected: false };
@@ -491,13 +532,13 @@ export class SynapzeGame {
 
     const checkpoint = findMapTiles(this.level, 'K')[0];
     if (checkpoint !== undefined) {
-      this.checkpointObject = createCheckpoint(this.cellSize * 0.78, accent);
+      this.checkpointObject = createCheckpoint(this.cellSize * 0.84, accent);
       this.gridToWorld(checkpoint, this.checkpointObject.position);
       this.levelContent.add(this.checkpointObject);
     }
 
     this.patrols = this.level.patrols.map((definition) => {
-      const rig = createDrone(this.cellSize * 0.72 * CHARACTER_VISUAL_SCALE, 0xff315d);
+      const rig = createDrone(this.cellSize * 0.72 * DRONE_VISUAL_SCALE, 0xff315d);
       const from = this.gridToWorld(definition.path[0], new THREE.Vector3());
       const to = this.gridToWorld(definition.path[1], new THREE.Vector3());
       rig.group.position.lerpVectors(from, to, THREE.MathUtils.clamp(definition.phase ?? 0, 0, 1));
@@ -507,7 +548,7 @@ export class SynapzeGame {
     });
 
     this.traps = this.level.traps.map((definition) => {
-      const rig = createSpikeTrap(this.cellSize * 0.76, 0xff294d);
+      const rig = createSpikeTrap(this.cellSize * 0.82, 0xff294d);
       this.gridToWorld(definition, rig.group.position);
       this.levelContent?.add(rig.group);
       return { definition, rig, active: false };
